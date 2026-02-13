@@ -1,0 +1,28 @@
+body {
+  font-family: monospace;
+  font-size: 12px;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  margin: 0;
+  padding: 0;
+  width: 300px;
+}
+
+#popup {
+  padding: 12px;
+}
+
+h1 {
+  font-size: 14px;
+  color: #9b59b6;
+  margin-bottom: 8px;
+}
+
+#status {
+  color: #888;
+  margin-bottom: 8px;
+}
+
+#summary {
+  font-size: 11px;
+}

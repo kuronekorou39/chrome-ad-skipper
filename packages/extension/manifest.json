@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Twitch HLS Inspector",
+  "version": "0.1.0",
+  "description": "HLS stream analysis and ad detection tool for Twitch",
+  "permissions": [
+    "webRequest",
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "*://*.hls.ttvnw.net/*",
+    "*://*.ttvnw.net/*",
+    "*://*.cloudfront.net/*",
+    "*://*.twitch.tv/*"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.twitch.tv/*"],
+      "js": ["content/content-script.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["*://*.twitch.tv/*"],
+      "js": ["page/page-script.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    }
+  ],
+  "devtools_page": "devtools/devtools.html",
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Twitch HLS Inspector"
+  }
+}

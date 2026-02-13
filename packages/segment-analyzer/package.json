@@ -1,0 +1,15 @@
+{
+  "name": "@twitch-swap/segment-analyzer",
+  "version": "0.1.0",
+  "private": true,
+  "bin": {
+    "segment-analyzer": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "commander": "^12.0.0"
+  }
+}
