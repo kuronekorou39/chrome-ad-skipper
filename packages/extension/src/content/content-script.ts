@@ -3,6 +3,7 @@ import type { PageMessage, ExtVideoStateUpdate, ExtMediaSourceUpdate } from '@tw
 import { DomObserver } from './dom-observer';
 import { VideoTracker } from './video-tracker';
 import { Bridge } from './bridge';
+import { StreamSwapper } from './stream-swapper';
 
 console.log('[Twitch HLS Inspector] Content script loaded');
 
@@ -56,9 +57,13 @@ const domObserver = new DomObserver();
 // Set up video tracker
 const videoTracker = new VideoTracker();
 
-// When DOM observer finds video elements, track them
+// Set up stream swapper for ad bypass
+const streamSwapper = new StreamSwapper();
+
+// When DOM observer finds video elements, track them and check for swap
 domObserver.onVideoElementsChanged((videos) => {
   videoTracker.updateElements(videos);
+  streamSwapper.onVideoElementsChanged(videos);
 });
 
 // When video tracker has state updates, send to background

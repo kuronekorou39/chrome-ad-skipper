@@ -30,6 +30,7 @@ export const AD_TAGS = {
 export const MESSAGE_SOURCE = {
   PAGE: 'twitch-swap-page',
   EXTENSION: 'twitch-swap',
+  CONTENT: 'twitch-swap-content',
 } as const;
 
 /** Storage keys for chrome.storage.local */
