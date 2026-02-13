@@ -1,0 +1,30 @@
+node_modules/
+dist/
+*.js.map
+*.d.ts.map
+
+# Build outputs
+packages/shared/dist/
+packages/extension/dist/
+packages/segment-analyzer/dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+
+# Claude Code
+.claude/

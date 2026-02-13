@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Twitch HLS Inspector</title>
+  <link rel="stylesheet" href="styles/panel.css">
+</head>
+<body>
+  <div id="app">
+    <header id="header">
+      <h1>Twitch HLS Inspector</h1>
+      <div id="controls">
+        <button id="btn-clear">Clear</button>
+        <button id="btn-export">Export JSON</button>
+        <span id="status">Disconnected</span>
+      </div>
+    </header>
+
+    <nav id="tabs">
+      <button class="tab active" data-panel="timeline">Timeline</button>
+      <button class="tab" data-panel="segments">Segments</button>
+      <button class="tab" data-panel="playlist">Playlist</button>
+      <button class="tab" data-panel="network">Network</button>
+      <button class="tab" data-panel="video">Video State</button>
+    </nav>
+
+    <main id="panels">
+      <div id="panel-timeline" class="panel active">
+        <canvas id="timeline-canvas" width="800" height="120"></canvas>
+      </div>
+
+      <div id="panel-segments" class="panel">
+        <table id="segment-table">
+          <thead>
+            <tr>
+              <th>Seq</th>
+              <th>Duration</th>
+              <th>Type</th>
+              <th>URL</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div id="panel-playlist" class="panel">
+        <div id="playlist-info"></div>
+        <pre id="playlist-raw"></pre>
+      </div>
+
+      <div id="panel-network" class="panel">
+        <table id="network-table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Status</th>
+              <th>URL</th>
+              <th>Size</th>
+              <th>Duration</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div id="panel-video" class="panel">
+        <div id="video-states"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="panel.js"></script>
+</body>
+</html>
