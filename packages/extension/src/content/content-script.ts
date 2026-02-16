@@ -4,6 +4,9 @@ import { DomObserver } from './dom-observer';
 import { VideoTracker } from './video-tracker';
 import { Bridge } from './bridge';
 import { StreamSwapper } from './stream-swapper';
+import { PointsClaimer } from './points-claimer';
+import { VodAdHandler } from './vod-ad-handler';
+import { ChatKeeper } from './chat-keeper';
 
 console.log('[Twitch HLS Inspector] Content script loaded');
 
@@ -60,6 +63,15 @@ const videoTracker = new VideoTracker();
 // Set up stream swapper for ad bypass
 const streamSwapper = new StreamSwapper();
 
+// Notify background of swap state changes (for badge updates)
+streamSwapper.onStateChange((state) => {
+  safeSendMessage({
+    source: MESSAGE_SOURCE.EXTENSION,
+    type: 'swap-state-changed',
+    data: { state },
+  });
+});
+
 // When DOM observer finds video elements, track them and check for swap
 domObserver.onVideoElementsChanged((videos) => {
   videoTracker.updateElements(videos);
@@ -81,6 +93,32 @@ videoTracker.onStateUpdate((states) => {
   safeSendMessage(msg);
 });
 
+// Set up auto points claimer
+const pointsClaimer = new PointsClaimer();
+
+// Set up VOD ad handler (mute + fast-forward)
+const vodAdHandler = new VodAdHandler();
+
+// Keep chat open in the background so PbyP player stays available for swap
+const chatKeeper = new ChatKeeper();
+
+// Handle status queries from popup
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.type === 'get-swap-status') {
+    sendResponse({
+      url: location.href,
+      connected: true,
+      swap: streamSwapper.getStatus(),
+      points: pointsClaimer.getStatus(),
+      vodAd: vodAdHandler.getStatus(),
+    });
+    return true;
+  }
+});
+
 // Start observing
 domObserver.start();
 videoTracker.startPolling();
+pointsClaimer.start();
+vodAdHandler.start();
+chatKeeper.start();

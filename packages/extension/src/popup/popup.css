@@ -5,7 +5,7 @@ body {
   color: #e0e0e0;
   margin: 0;
   padding: 0;
-  width: 300px;
+  width: 340px;
 }
 
 #popup {
@@ -15,14 +15,68 @@ body {
 h1 {
   font-size: 14px;
   color: #9b59b6;
-  margin-bottom: 8px;
+  margin: 0 0 10px;
 }
 
-#status {
-  color: #888;
+#connection {
   margin-bottom: 8px;
-}
-
-#summary {
   font-size: 11px;
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.dot--green { background: #2ecc71; }
+.dot--yellow { background: #f1c40f; }
+.dot--red { background: #e74c3c; }
+
+#swap-status {
+  background: #16213e;
+  border-radius: 4px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.status-row:last-child {
+  margin-bottom: 0;
+}
+
+.label {
+  color: #888;
+}
+
+.val--idle { color: #888; }
+.val--swap { color: #f1c40f; font-weight: bold; }
+
+#log {
+  font-size: 10px;
+  color: #777;
+  max-height: 160px;
+  overflow-y: auto;
+  border-top: 1px solid #2a2a4a;
+  padding-top: 6px;
+}
+
+#log:empty {
+  display: none;
+}
+
+.log-entry {
+  padding: 1px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

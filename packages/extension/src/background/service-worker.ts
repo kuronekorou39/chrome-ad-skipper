@@ -38,8 +38,25 @@ chrome.runtime.onMessage.addListener((message, sender) => {
   if (message.source !== 'twitch-swap') return;
 
   const tabId = sender.tab?.id ?? -1;
+
+  // Handle badge updates for swap state
+  if (message.type === 'swap-state-changed' && tabId >= 0) {
+    updateBadge(tabId, message.data.state);
+    return;
+  }
+
   dataStore.add(tabId, message);
 
   // Defer broadcast — direct forward from onMessage can drop messages
   setTimeout(() => broadcastToDevTools(tabId, message), 0);
 });
+
+/** Update the extension icon badge to reflect swap state */
+function updateBadge(tabId: number, state: 'idle' | 'swapping'): void {
+  if (state === 'swapping') {
+    chrome.action.setBadgeText({ text: 'AD', tabId });
+    chrome.action.setBadgeBackgroundColor({ color: '#f1c40f', tabId });
+  } else {
+    chrome.action.setBadgeText({ text: '', tabId });
+  }
+}
