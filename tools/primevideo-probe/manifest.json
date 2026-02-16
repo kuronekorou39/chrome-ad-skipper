@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Prime Video Ad Probe",
+  "version": "0.1.0",
+  "description": "Diagnostic tool to analyze Prime Video ad delivery mechanism",
+  "permissions": ["storage", "tabs", "activeTab"],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.amazon.co.jp/*",
+        "*://*.amazon.com/*",
+        "*://*.primevideo.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Prime Video Ad Probe"
+  }
+}
