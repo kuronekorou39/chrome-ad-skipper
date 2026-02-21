@@ -2,7 +2,7 @@ import { setupWebRequestLogger } from './web-request-logger';
 import { dataStore } from './data-store';
 import { broadcastToDevTools, registerDevToolsPort, unregisterDevToolsPort } from './broadcast';
 
-console.log('[Twitch HLS Inspector] Service Worker started');
+console.log('[広告スキッパー] Service Worker started');
 
 // Initialize web request logging
 setupWebRequestLogger();
@@ -17,7 +17,7 @@ chrome.runtime.onConnect.addListener((port) => {
     if (msg.type === 'devtools-init') {
       tabId = msg.tabId;
       registerDevToolsPort(tabId, port);
-      console.log(`[Twitch HLS Inspector] DevTools panel connected for tab ${tabId}`);
+      console.log(`[広告スキッパー] DevTools panel connected for tab ${tabId}`);
 
       dataStore.getAll(tabId).then((data) => {
         port.postMessage({ type: 'devtools-data', data });
@@ -28,22 +28,22 @@ chrome.runtime.onConnect.addListener((port) => {
   port.onDisconnect.addListener(() => {
     if (tabId >= 0) {
       unregisterDevToolsPort(tabId);
-      console.log(`[Twitch HLS Inspector] DevTools panel disconnected for tab ${tabId}`);
+      console.log(`[広告スキッパー] DevTools panel disconnected for tab ${tabId}`);
     }
   });
 });
 
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((message, sender) => {
-  if (message.source !== 'twitch-swap') return;
-
   const tabId = sender.tab?.id ?? -1;
 
-  // Handle badge updates for swap state
-  if (message.type === 'swap-state-changed' && tabId >= 0) {
+  // Unified badge update from any content script
+  if (message.type === 'badge-update' && tabId >= 0) {
     updateBadge(tabId, message.data.state);
     return;
   }
+
+  if (message.source !== 'twitch-swap') return;
 
   dataStore.add(tabId, message);
 
@@ -51,12 +51,35 @@ chrome.runtime.onMessage.addListener((message, sender) => {
   setTimeout(() => broadcastToDevTools(tabId, message), 0);
 });
 
-/** Update the extension icon badge to reflect swap state */
-function updateBadge(tabId: number, state: 'idle' | 'swapping'): void {
-  if (state === 'swapping') {
-    chrome.action.setBadgeText({ text: 'AD', tabId });
-    chrome.action.setBadgeBackgroundColor({ color: '#f1c40f', tabId });
-  } else {
-    chrome.action.setBadgeText({ text: '', tabId });
+// Clear badge when navigating away from supported sites
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.url) {
+    const url = changeInfo.url;
+    const isSupported =
+      url.includes('twitch.tv') ||
+      url.includes('amazon.co') ||
+      url.includes('amazon.com') ||
+      url.includes('primevideo.com');
+    if (!isSupported) {
+      chrome.action.setBadgeText({ text: '', tabId });
+    }
+  }
+});
+
+/** Update the extension icon badge to reflect current state */
+function updateBadge(tabId: number, state: 'on' | 'ad' | 'off'): void {
+  switch (state) {
+    case 'on':
+      chrome.action.setBadgeText({ text: 'ON', tabId });
+      chrome.action.setBadgeBackgroundColor({ color: '#2ecc71', tabId });
+      break;
+    case 'ad':
+      chrome.action.setBadgeText({ text: 'AD', tabId });
+      chrome.action.setBadgeBackgroundColor({ color: '#f1c40f', tabId });
+      break;
+    case 'off':
+      chrome.action.setBadgeText({ text: 'OFF', tabId });
+      chrome.action.setBadgeBackgroundColor({ color: '#888888', tabId });
+      break;
   }
 }

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Twitch HLS Inspector",
-  "version": "0.1.0",
-  "description": "HLS stream analysis and ad detection tool for Twitch",
+  "name": "広告スキッパー",
+  "version": "0.2.0",
+  "description": "Twitch広告スワップ + Prime Video広告スキップ",
   "permissions": [
     "webRequest",
     "storage",
@@ -12,7 +12,10 @@
     "*://*.hls.ttvnw.net/*",
     "*://*.ttvnw.net/*",
     "*://*.cloudfront.net/*",
-    "*://*.twitch.tv/*"
+    "*://*.twitch.tv/*",
+    "*://*.amazon.co.jp/*",
+    "*://*.amazon.com/*",
+    "*://*.primevideo.com/*"
   ],
   "background": {
     "service_worker": "background/service-worker.js"
@@ -28,11 +31,30 @@
       "js": ["page/page-script.js"],
       "run_at": "document_start",
       "world": "MAIN"
+    },
+    {
+      "matches": [
+        "*://*.amazon.co.jp/*",
+        "*://*.amazon.com/*",
+        "*://*.primevideo.com/*"
+      ],
+      "js": ["content/prime-content-script.js"],
+      "run_at": "document_idle"
     }
   ],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
   "devtools_page": "devtools/devtools.html",
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "Twitch HLS Inspector"
+    "default_title": "広告スキッパー",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
   }
 }

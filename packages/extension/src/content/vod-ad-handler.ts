@@ -1,3 +1,5 @@
+import { showSkipOverlay, hideSkipOverlay } from './skip-overlay';
+
 const AD_SELECTOR = '[data-a-target="ax-overlay"] video, video[aria-label="Video Advertisement"]';
 const CHECK_INTERVAL = 500;
 const AD_PLAYBACK_RATE = 16;
@@ -52,6 +54,7 @@ export class VodAdHandler {
         this.skippedCount++;
         this.log(`Ad finished (#${this.skippedCount})`);
         this.currentAdSrc = null;
+        hideSkipOverlay();
       }
       return;
     }
@@ -69,6 +72,7 @@ export class VodAdHandler {
         (adVideo.duration && isFinite(adVideo.duration) ? adVideo.duration : 0) ||
         parseFloat(adVideo.src.match(/[&?]d=([\d.]+)/)?.[1] ?? '0');
       this.log(`Ad detected (${duration.toFixed(1)}s) — muting + ${AD_PLAYBACK_RATE}x`);
+      showSkipOverlay();
     }
 
     // Always enforce mute + speed (Twitch may reset these)

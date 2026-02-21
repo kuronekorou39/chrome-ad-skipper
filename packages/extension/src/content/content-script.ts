@@ -8,16 +8,16 @@ import { PointsClaimer } from './points-claimer';
 import { VodAdHandler } from './vod-ad-handler';
 import { ChatKeeper } from './chat-keeper';
 
-console.log('[Twitch HLS Inspector] Content script loaded');
+console.log('[広告スキッパー:Twitch] Content script loaded');
 
 /** Safely send a message to the background. Stops polling if context is dead. */
 function safeSendMessage(msg: unknown): void {
   try {
     chrome.runtime.sendMessage(msg).catch((err) => {
-      console.warn('[HLS Inspector] sendMessage rejected:', err?.message);
+      console.warn('[広告スキッパー:Twitch] sendMessage rejected:', err?.message);
     });
   } catch (err) {
-    console.error('[HLS Inspector] sendMessage threw:', (err as Error)?.message);
+    console.error('[広告スキッパー:Twitch] sendMessage threw:', (err as Error)?.message);
     // Only stop if context is truly invalidated
     if ((err as Error)?.message?.includes('Extension context invalidated')) {
       videoTracker.stopPolling();
@@ -45,11 +45,11 @@ bridge.onMessage((msg: PageMessage) => {
     }
 
     case 'fetch-intercept':
-      console.log('[HLS Inspector] Fetch intercepted:', msg.data.url);
+      console.log('[広告スキッパー:Twitch] Fetch intercepted:', msg.data.url);
       break;
 
     case 'video-event':
-      console.log('[HLS Inspector] Video event:', msg.data.event, msg.data.src);
+      console.log('[広告スキッパー:Twitch] Video event:', msg.data.event, msg.data.src);
       break;
   }
 });
@@ -63,14 +63,22 @@ const videoTracker = new VideoTracker();
 // Set up stream swapper for ad bypass
 const streamSwapper = new StreamSwapper();
 
-// Notify background of swap state changes (for badge updates)
+// Notify background of swap state changes (for badge + devtools)
 streamSwapper.onStateChange((state) => {
   safeSendMessage({
     source: MESSAGE_SOURCE.EXTENSION,
     type: 'swap-state-changed',
     data: { state },
   });
+  // Badge update
+  safeSendMessage({
+    type: 'badge-update',
+    data: { state: state === 'swapping' ? 'ad' : 'on' },
+  });
 });
+
+// Initial badge: content script loaded, monitoring
+safeSendMessage({ type: 'badge-update', data: { state: 'on' } });
 
 // When DOM observer finds video elements, track them and check for swap
 domObserver.onVideoElementsChanged((videos) => {
@@ -80,7 +88,7 @@ domObserver.onVideoElementsChanged((videos) => {
 
 // When video tracker has state updates, send to background
 videoTracker.onStateUpdate((states) => {
-  console.log(`[HLS Inspector] Video states: ${states.length} elements`);
+  console.log(`[広告スキッパー:Twitch] Video states: ${states.length} elements`);
   const msg: ExtVideoStateUpdate = {
     source: MESSAGE_SOURCE.EXTENSION,
     type: 'video-state-update',

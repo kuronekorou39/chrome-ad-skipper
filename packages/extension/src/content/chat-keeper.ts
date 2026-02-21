@@ -105,7 +105,7 @@ export class ChatKeeper {
         fill: currentColor;
       }
     `;
-    document.head.appendChild(this.styleElement);
+    (document.head || document.documentElement).appendChild(this.styleElement);
   }
 
   // ---------------------------------------------------------------------------

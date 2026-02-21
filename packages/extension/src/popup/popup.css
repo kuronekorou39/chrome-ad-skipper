@@ -35,13 +35,18 @@ h1 {
 .dot--green { background: #2ecc71; }
 .dot--yellow { background: #f1c40f; }
 .dot--red { background: #e74c3c; }
+.dot--blue { background: #3498db; }
 
-#swap-status {
+#status-panel {
   background: #16213e;
   border-radius: 4px;
   padding: 8px 10px;
   margin-bottom: 8px;
   font-size: 11px;
+}
+
+#status-panel:empty {
+  display: none;
 }
 
 .status-row {
@@ -60,6 +65,33 @@ h1 {
 
 .val--idle { color: #888; }
 .val--swap { color: #f1c40f; font-weight: bold; }
+.val--ad { color: #f39c12; font-weight: bold; }
+
+.toggle-btn {
+  background: #2a2a4a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #e0e0e0;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: monospace;
+  margin-top: 6px;
+}
+
+.toggle-btn:hover {
+  background: #3a3a5a;
+}
+
+.toggle-btn.on {
+  background: #2e7d32;
+  border-color: #4caf50;
+}
+
+.toggle-btn.off {
+  background: #b71c1c;
+  border-color: #f44336;
+}
 
 #log {
   font-size: 10px;

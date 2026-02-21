@@ -6,6 +6,7 @@ module.exports = {
   entry: {
     'background/service-worker': './src/background/service-worker.ts',
     'content/content-script': './src/content/content-script.ts',
+    'content/prime-content-script': './src/content/prime-content-script.ts',
     'page/page-script': './src/page/page-script.ts',
     'devtools/devtools': './src/devtools/devtools.ts',
     'devtools/panel/panel': './src/devtools/panel/panel.ts',
@@ -37,6 +38,7 @@ module.exports = {
         { from: 'src/devtools/panel/styles', to: 'devtools/panel/styles' },
         { from: 'src/popup/popup.html', to: 'popup/popup.html' },
         { from: 'src/popup/popup.css', to: 'popup/popup.css' },
+        { from: 'src/icons', to: 'icons' },
       ],
     }),
   ],
