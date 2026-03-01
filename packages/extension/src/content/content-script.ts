@@ -7,6 +7,7 @@ import { StreamSwapper } from './stream-swapper';
 import { PointsClaimer } from './points-claimer';
 import { VodAdHandler } from './vod-ad-handler';
 import { ChatKeeper } from './chat-keeper';
+import { setOverlayOpacity } from './skip-overlay';
 
 console.log('[広告スキッパー:Twitch] Content script loaded');
 
@@ -124,9 +125,58 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 });
 
-// Start observing
-domObserver.start();
-videoTracker.startPolling();
-pointsClaimer.start();
-vodAdHandler.start();
-chatKeeper.start();
+// Load settings and start modules conditionally
+chrome.storage.local.get(
+  ['streamSwapEnabled', 'vodAdSkipEnabled', 'autoPointsEnabled', 'chatKeeperEnabled', 'overlayOpacity'],
+  (data) => {
+    const swapEnabled = data.streamSwapEnabled !== false;
+    const vodEnabled = data.vodAdSkipEnabled !== false;
+    const pointsEnabled = data.autoPointsEnabled !== false;
+    const chatEnabled = data.chatKeeperEnabled !== false;
+
+    if (data.overlayOpacity !== undefined) {
+      setOverlayOpacity(data.overlayOpacity);
+    }
+
+    streamSwapper.setEnabled(swapEnabled);
+    domObserver.start();
+    videoTracker.startPolling();
+
+    if (vodEnabled) vodAdHandler.start();
+    if (pointsEnabled) pointsClaimer.start();
+    if (chatEnabled) chatKeeper.start();
+  },
+);
+
+// Listen for settings changes from popup
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local') return;
+
+  if (changes.streamSwapEnabled) {
+    streamSwapper.setEnabled(changes.streamSwapEnabled.newValue !== false);
+  }
+  if (changes.vodAdSkipEnabled) {
+    if (changes.vodAdSkipEnabled.newValue === false) {
+      vodAdHandler.stop();
+    } else {
+      vodAdHandler.start();
+    }
+  }
+  if (changes.autoPointsEnabled) {
+    if (changes.autoPointsEnabled.newValue === false) {
+      pointsClaimer.stop();
+    } else {
+      pointsClaimer.start();
+    }
+  }
+  if (changes.chatKeeperEnabled) {
+    if (changes.chatKeeperEnabled.newValue === false) {
+      chatKeeper.stop();
+    } else {
+      chatKeeper.start();
+    }
+  }
+  if (changes.overlayOpacity) {
+    setOverlayOpacity(changes.overlayOpacity.newValue);
+  }
+});

@@ -2,7 +2,7 @@ import { showSkipOverlay, hideSkipOverlay, updateSkipOverlayTimer } from './skip
 
 const AD_OVERLAY_SELECTOR = '[class*="atvwebplayersdk-ad"]';
 const AD_TIMER_SELECTOR = '.atvwebplayersdk-ad-timer-remaining-time';
-const POLL_INTERVAL = 500;
+const POLL_INTERVAL = 200;
 const AD_PLAYBACK_RATE = 16;
 const MAX_LOG_ENTRIES = 30;
 
@@ -52,6 +52,7 @@ export class PrimeAdHandler {
   }
 
   setAutoSkip(enabled: boolean): void {
+    if (this.autoSkipEnabled === enabled) return;
     this.autoSkipEnabled = enabled;
     chrome.storage.local.set({ pvAutoSkip: enabled });
     this.log(`Auto-skip: ${enabled ? 'ON' : 'OFF'}`);
@@ -109,10 +110,14 @@ export class PrimeAdHandler {
       const remaining = document.querySelector(AD_TIMER_SELECTOR)?.textContent ?? '';
       updateSkipOverlayTimer(remaining ? `広告 ${remaining}` : '');
 
+      // Choose speed based on remaining time — slow down near the end
+      // to avoid overshooting into content at high speed
+      const targetRate = this.rateForRemaining(remaining);
+
       // Speed up + mute whatever is playing
       if (playingVideo) {
-        if (playingVideo.playbackRate !== AD_PLAYBACK_RATE) {
-          playingVideo.playbackRate = AD_PLAYBACK_RATE;
+        if (playingVideo.playbackRate !== targetRate) {
+          playingVideo.playbackRate = targetRate;
         }
         if (!playingVideo.muted) playingVideo.muted = true;
         if (playingVideo.volume > 0) playingVideo.volume = 0;
@@ -136,7 +141,27 @@ export class PrimeAdHandler {
     }
   }
 
+  /** Parse "M:SS" timer text into seconds. Returns Infinity if unparseable. */
+  private parseRemainingSeconds(text: string): number {
+    const m = text.match(/(\d+):(\d{2})/);
+    if (!m) return Infinity;
+    return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  }
+
+  /** Ramp down playback rate as the ad nears its end. */
+  private rateForRemaining(timerText: string): number {
+    const secs = this.parseRemainingSeconds(timerText);
+    if (secs <= 1) return 2;
+    if (secs <= 3) return 4;
+    return AD_PLAYBACK_RATE;
+  }
+
   private isAdOverlayVisible(): boolean {
+    // The ad timer element only exists while an ad is actually playing,
+    // not during seekbar hover previews.
+    const timer = document.querySelector(AD_TIMER_SELECTOR);
+    if (!timer) return false;
+
     const overlays = Array.from(document.querySelectorAll(AD_OVERLAY_SELECTOR));
     for (let i = 0; i < overlays.length; i++) {
       const el = overlays[i];
