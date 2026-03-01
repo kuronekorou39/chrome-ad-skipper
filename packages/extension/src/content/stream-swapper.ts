@@ -21,6 +21,7 @@ const MAX_LOG_ENTRIES = 20;
 type SwapStateCallback = (state: 'idle' | 'swapping') => void;
 
 export class StreamSwapper {
+  private enabled = true;
   private isSwapped = false;
   /** The main player video element (tracked continuously) */
   private originalVideo: HTMLVideoElement | null = null;
@@ -42,6 +43,13 @@ export class StreamSwapper {
 
   onStateChange(cb: SwapStateCallback): void {
     this.stateCallbacks.push(cb);
+  }
+
+  setEnabled(value: boolean): void {
+    this.enabled = value;
+    if (!value && this.isSwapped) {
+      this.deactivateSwap();
+    }
   }
 
   private notifyStateChange(): void {
@@ -82,7 +90,19 @@ export class StreamSwapper {
     );
   }
 
+  /** Check if Twitch is actually showing an ad break (DOM indicators). */
+  private isAdBreakActive(): boolean {
+    // Ad banner text ("right after this ad break")
+    if (document.querySelector('[data-test-selector="ad-banner-default-text"]')) return true;
+    if (document.querySelector('span.tw-c-text-overlay')) return true;
+    // ax-overlay with active ad content (childElementCount > 2)
+    const ax = document.querySelector('[data-a-target="ax-overlay"]');
+    if (ax && ax.parentNode instanceof HTMLElement && ax.parentNode.childElementCount > 2) return true;
+    return false;
+  }
+
   onVideoElementsChanged(allVideos: HTMLVideoElement[]): void {
+    if (!this.enabled) return;
     this.videoCount = allVideos.length;
     const active = allVideos.filter((v) => this.isActive(v));
     this.log(`Videos: ${allVideos.length} total, ${active.length} active`);
@@ -95,8 +115,12 @@ export class StreamSwapper {
     if (!this.isSwapped) {
       this.clearPendingCheck();
       if (active.length >= 2) {
-        // Two active videos — swap immediately
-        this.activateSwap(active);
+        if (this.isAdBreakActive()) {
+          this.activateSwap(active);
+        } else {
+          // Two videos but no ad DOM indicators — not a real ad break
+          this.log('Two active videos but no ad indicators — skipping swap');
+        }
       } else if (allVideos.length >= 2 && active.length < 2) {
         // Multiple video elements exist but not all active yet — poll
         this.waitForActiveVideos(allVideos);
@@ -119,10 +143,13 @@ export class StreamSwapper {
       const active = allVideos.filter(
         (v) => document.contains(v) && this.isActive(v),
       );
-      if (active.length >= 2) {
+      if (active.length >= 2 && this.isAdBreakActive()) {
         this.clearPendingCheck();
         this.log('Second active video appeared — activating swap');
         this.activateSwap(active);
+      } else if (active.length >= 2 && !this.isAdBreakActive()) {
+        this.clearPendingCheck();
+        this.log('Second active video but no ad indicators — skipping swap');
       } else if (checks >= 15) {
         this.clearPendingCheck();
         this.log('No second active video — not an ad');

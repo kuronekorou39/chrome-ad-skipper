@@ -1,27 +1,50 @@
 /**
- * Full-screen dark overlay shown while an ad is being fast-forwarded.
- * Covers the video with a black screen + "広告スキップ中" text,
+ * Dark overlay shown while an ad is being fast-forwarded.
+ * Covers the video area with a black screen + "広告スキップ中" text,
  * making the skip feel like a brief dark transition.
+ *
+ * Two modes:
+ *  - Fullscreen (Prime Video): covers the entire viewport.
+ *  - Targeted (Twitch): covers only the video player element.
  */
 
 const OVERLAY_ID = 'ad-skipper-overlay';
 
+let currentOpacity = 0.85;
 let overlay: HTMLDivElement | null = null;
 let timerEl: HTMLDivElement | null = null;
+let targetElement: HTMLElement | null = null;
+let resizeObserver: ResizeObserver | null = null;
 
-function ensureOverlay(): HTMLDivElement {
-  if (overlay && overlay.isConnected) return overlay;
+function positionOverTarget(): void {
+  if (!overlay || !targetElement) return;
+  const rect = targetElement.getBoundingClientRect();
+  Object.assign(overlay.style, {
+    top: `${rect.top}px`,
+    left: `${rect.left}px`,
+    width: `${rect.width}px`,
+    height: `${rect.height}px`,
+  });
+}
+
+function ensureOverlay(target?: HTMLElement): HTMLDivElement {
+  if (overlay && overlay.isConnected) {
+    // Update target if changed
+    if (target && target !== targetElement) {
+      targetElement = target;
+      applyPositionMode();
+    }
+    return overlay;
+  }
+
+  targetElement = target ?? null;
 
   overlay = document.createElement('div');
   overlay.id = OVERLAY_ID;
   Object.assign(overlay.style, {
     position: 'fixed',
-    top: '0',
-    left: '0',
-    width: '100vw',
-    height: '100vh',
     zIndex: '2147483647',
-    background: '#000',
+    background: `rgba(0, 0, 0, ${currentOpacity})`,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -30,6 +53,8 @@ function ensureOverlay(): HTMLDivElement {
     transition: 'opacity 0.15s ease-in',
     pointerEvents: 'none',
   });
+
+  applyPositionMode();
 
   const text = document.createElement('div');
   Object.assign(text.style, {
@@ -86,11 +111,36 @@ function ensureOverlay(): HTMLDivElement {
   overlay.appendChild(style);
 
   (document.body || document.documentElement).appendChild(overlay);
+
+  // If targeting a specific element, track its size/position changes
+  if (targetElement) {
+    resizeObserver = new ResizeObserver(() => positionOverTarget());
+    resizeObserver.observe(targetElement);
+    window.addEventListener('resize', positionOverTarget);
+  }
+
   return overlay;
 }
 
-export function showSkipOverlay(): void {
-  const el = ensureOverlay();
+function applyPositionMode(): void {
+  if (!overlay) return;
+  if (targetElement) {
+    positionOverTarget();
+  } else {
+    Object.assign(overlay.style, {
+      top: '0',
+      left: '0',
+      width: '100vw',
+      height: '100vh',
+    });
+  }
+}
+
+/**
+ * @param target Optional element to cover. If omitted, covers the full viewport.
+ */
+export function showSkipOverlay(target?: HTMLElement): void {
+  const el = ensureOverlay(target);
   // Force reflow then fade in
   el.style.display = 'flex';
   el.offsetHeight; // force layout
@@ -104,7 +154,20 @@ export function updateSkipOverlayTimer(text: string): void {
 export function hideSkipOverlay(): void {
   if (!overlay) return;
   overlay.style.opacity = '0';
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+  }
+  window.removeEventListener('resize', positionOverTarget);
+  targetElement = null;
   setTimeout(() => {
     if (overlay) overlay.style.display = 'none';
   }, 150);
+}
+
+export function setOverlayOpacity(percent: number): void {
+  currentOpacity = Math.max(0, Math.min(100, percent)) / 100;
+  if (overlay) {
+    overlay.style.background = `rgba(0, 0, 0, ${currentOpacity})`;
+  }
 }

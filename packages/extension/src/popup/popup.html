@@ -7,9 +7,16 @@
 <body>
   <div id="popup">
     <h1>広告スキッパー</h1>
-    <div id="connection"></div>
-    <div id="status-panel"></div>
-    <div id="log"></div>
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="status">ステータス</button>
+      <button class="tab-btn" data-tab="settings">設定</button>
+    </div>
+    <div id="tab-status">
+      <div id="connection"></div>
+      <div id="status-panel"></div>
+      <div id="log"></div>
+    </div>
+    <div id="tab-settings" class="hidden"></div>
   </div>
   <script src="popup.js"></script>
 </body>
