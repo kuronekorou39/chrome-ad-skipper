@@ -9,7 +9,7 @@
  * When the user clicks the collapse button:
  *   - We intercept the click (capture phase) to prevent Twitch from handling it
  *   - We hide the right column with CSS (width: 0, overflow: hidden)
- *   - We expand the persistent-player to fill the freed space
+ *   - CSS var --tss-sidebar-w drives the correct player width/height
  *   - We show a floating expand button for the user to re-expand
  *
  * In theater mode, this is not needed (PbyP works regardless of chat state).
@@ -17,42 +17,56 @@
 
 const TOGGLE_BTN_SELECTOR = '[data-a-target="right-column__toggle-collapse-btn"]';
 const RIGHT_COL_SELECTOR = '.right-column';
-const PLAYER_SELECTOR = '.persistent-player';
-const INFO_SELECTOR = '.channel-root__info--with-chat, .channel-root__info';
+const SIDEBAR_SELECTOR = '.side-nav';
 
 const EXPAND_SVG = `<svg viewBox="0 0 24 24" width="20" height="20">
   <path d="M21 5h-2v14h2V5Z"></path>
   <path fill-rule="evenodd" d="M8.707 5.293 2 12l6.707 6.707 1.414-1.414L5.828 13h11.586v-2H5.828l4.293-4.293-1.414-1.414Z" clip-rule="evenodd"></path>
 </svg>`;
 
+const MAX_LOG_ENTRIES = 30;
+
+export interface ChatKeeperStatus {
+  log: string[];
+}
+
 export class ChatKeeper {
   private isFakeCollapsed = false;
   private bypassIntercept = false;
-  private savedRightColWidth = 0;
   private floatingButton: HTMLElement | null = null;
-  private widthObserver: MutationObserver | null = null;
   private resizeHandler: (() => void) | null = null;
+  private sidebarObserver: ResizeObserver | null = null;
   private styleElement: HTMLStyleElement | null = null;
-  private isAdjustingWidth = false;
+  private eventLog: string[] = [];
+
+  getStatus(): ChatKeeperStatus {
+    return { log: [...this.eventLog] };
+  }
 
   start(): void {
     this.injectStyles();
     this.setupClickInterceptor();
     this.waitForReady();
-    console.log('[ChatKeeper] Started');
+    this.log('Started');
   }
 
   stop(): void {
-    this.widthObserver?.disconnect();
     if (this.resizeHandler) {
       window.removeEventListener('resize', this.resizeHandler);
     }
+    this.sidebarObserver?.disconnect();
     this.floatingButton?.remove();
     this.styleElement?.remove();
     document.body.classList.remove('tss-chat-hidden');
+    document.documentElement.style.removeProperty('--tss-sidebar-w');
   }
 
   private log(msg: string): void {
+    const time = new Date().toLocaleTimeString('ja-JP', { hour12: false });
+    this.eventLog.push(`[${time}] ${msg}`);
+    if (this.eventLog.length > MAX_LOG_ENTRIES) {
+      this.eventLog.shift();
+    }
     console.log(`[ChatKeeper] ${msg}`);
   }
 
@@ -61,7 +75,7 @@ export class ChatKeeper {
   }
 
   // ---------------------------------------------------------------------------
-  // CSS injection
+  // CSS injection — all layout is driven by the --tss-sidebar-w variable
   // ---------------------------------------------------------------------------
 
   private injectStyles(): void {
@@ -78,12 +92,23 @@ export class ChatKeeper {
         border: none !important;
       }
 
-      /* Floating expand button */
+      /* Player fills viewport minus sidebar */
+      body.tss-chat-hidden .persistent-player {
+        width: calc(100vw - var(--tss-sidebar-w, 0px)) !important;
+        height: calc((100vw - var(--tss-sidebar-w, 0px)) * 9 / 16) !important;
+      }
+
+      /* Info section margin matches player height */
+      body.tss-chat-hidden .channel-root__info--with-chat,
+      body.tss-chat-hidden .channel-root__info {
+        margin-top: calc((100vw - var(--tss-sidebar-w, 0px)) * 9 / 16) !important;
+      }
+
+      /* Floating expand button — top-right, below Twitch nav */
       #tss-expand-chat {
         position: fixed;
         right: 0;
-        top: 50%;
-        transform: translateY(-50%);
+        top: 5rem;
         z-index: 5000;
         background: var(--color-background-base, #18181b);
         border: 1px solid var(--color-border-base, #2f2f35);
@@ -106,6 +131,23 @@ export class ChatKeeper {
       }
     `;
     (document.head || document.documentElement).appendChild(this.styleElement);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Sidebar width tracking — updates the CSS variable
+  // ---------------------------------------------------------------------------
+
+  private updateSidebarVar(): void {
+    const sidebar = document.querySelector(SIDEBAR_SELECTOR) as HTMLElement;
+    const w = sidebar ? sidebar.getBoundingClientRect().width : 0;
+    document.documentElement.style.setProperty('--tss-sidebar-w', `${w}px`);
+  }
+
+  private watchSidebar(): void {
+    const sidebar = document.querySelector(SIDEBAR_SELECTOR) as HTMLElement;
+    if (!sidebar || this.sidebarObserver) return;
+    this.sidebarObserver = new ResizeObserver(() => this.updateSidebarVar());
+    this.sidebarObserver.observe(sidebar);
   }
 
   // ---------------------------------------------------------------------------
@@ -145,9 +187,13 @@ export class ChatKeeper {
   // ---------------------------------------------------------------------------
 
   private waitForReady(): void {
+    let collapsedCount = 0;
+    const REQUIRED_HITS = 3;
+
     const check = () => {
       const rightCol = document.querySelector(RIGHT_COL_SELECTOR);
       if (!rightCol) {
+        collapsedCount = 0;
         setTimeout(check, 500);
         return;
       }
@@ -158,27 +204,32 @@ export class ChatKeeper {
         return;
       }
 
-      // If chat starts collapsed, expand it then fake-collapse
+      // If chat starts collapsed, confirm it's stable (not a React hydration flicker)
       if (rightCol.classList.contains('right-column--collapsed')) {
-        this.log('Chat starts collapsed — expanding and fake-collapsing');
+        collapsedCount++;
+        if (collapsedCount < REQUIRED_HITS) {
+          setTimeout(check, 300);
+          return;
+        }
+        this.log('Chat starts collapsed (confirmed stable) — expanding and fake-collapsing');
         this.expandAndFakeCollapse();
+        return;
       }
 
-      this.setupWidthWatcher();
+      // Set up handlers for future fake-collapses
+      this.setupResizeHandler();
+      this.watchSidebar();
     };
     setTimeout(check, 1000);
   }
 
   /**
    * When the page loads with chat already collapsed:
-   * 1. Pre-apply our hide CSS so the user doesn't see a flash
-   * 2. Click the expand button to let Twitch open chat (creates PbyP)
-   * 3. After Twitch finishes, adjust the player width
+   * 1. Click the expand button to let Twitch open chat (creates PbyP)
+   * 2. Poll until Twitch finishes expanding (right-column--collapsed removed)
+   * 3. Then apply our CSS hide
    */
   private expandAndFakeCollapse(): void {
-    document.body.classList.add('tss-chat-hidden');
-    this.isFakeCollapsed = true;
-
     const btn = document.querySelector(TOGGLE_BTN_SELECTOR) as HTMLElement;
     if (btn) {
       this.bypassIntercept = true;
@@ -186,12 +237,25 @@ export class ChatKeeper {
       this.bypassIntercept = false;
     }
 
-    // Wait for Twitch to expand and render the PbyP player, then adjust layout
-    setTimeout(() => {
-      this.saveRightColWidth();
-      this.adjustPlayerWidth();
-      this.showFloatingButton();
-    }, 600);
+    let attempts = 0;
+    const MAX_ATTEMPTS = 30;
+    const waitForExpanded = () => {
+      attempts++;
+      const rightCol = document.querySelector(RIGHT_COL_SELECTOR);
+      const isExpanded = rightCol && !rightCol.classList.contains('right-column--collapsed');
+
+      if (isExpanded || attempts >= MAX_ATTEMPTS) {
+        this.applyFakeCollapse();
+        this.setupResizeHandler();
+        this.watchSidebar();
+        if (attempts >= MAX_ATTEMPTS) {
+          this.log('expandAndFakeCollapse: max attempts reached, proceeding anyway');
+        }
+      } else {
+        setTimeout(waitForExpanded, 100);
+      }
+    };
+    setTimeout(waitForExpanded, 100);
   }
 
   // ---------------------------------------------------------------------------
@@ -199,131 +263,41 @@ export class ChatKeeper {
   // ---------------------------------------------------------------------------
 
   private fakeCollapse(): void {
-    this.saveRightColWidth();
-    document.body.classList.add('tss-chat-hidden');
-    this.isFakeCollapsed = true;
-    this.adjustPlayerWidth();
-    this.showFloatingButton();
-    this.log(`Fake-collapsed (saved rightCol width: ${this.savedRightColWidth}px)`);
+    this.applyFakeCollapse();
+    this.log('Fake-collapsed');
   }
 
   private unfakeCollapse(): void {
+    // Just remove the class — all CSS overrides disappear cleanly,
+    // Twitch's original inline styles take effect immediately.
     document.body.classList.remove('tss-chat-hidden');
     this.isFakeCollapsed = false;
-    this.restorePlayerWidth();
-    this.restoreInfoMargin();
     this.hideFloatingButton();
+
+    // Trigger Twitch layout recalculation
+    window.dispatchEvent(new Event('resize'));
     this.log('Fake-collapse removed — chat visible again');
   }
 
-  // ---------------------------------------------------------------------------
-  // Player width management
-  // ---------------------------------------------------------------------------
-
-  private saveRightColWidth(): void {
-    const rightCol = document.querySelector(RIGHT_COL_SELECTOR) as HTMLElement;
-    if (rightCol) {
-      const w = rightCol.getBoundingClientRect().width;
-      if (w > 0) this.savedRightColWidth = w;
-    }
-  }
-
-  /**
-   * Twitch sets persistent-player width based on its internal state
-   * ("chat open" → narrower width). We override to add back the
-   * space freed by hiding the right column.
-   */
-  private adjustPlayerWidth(): void {
-    if (this.isAdjustingWidth || this.savedRightColWidth <= 0) return;
-    this.isAdjustingWidth = true;
-
-    const player = document.querySelector(PLAYER_SELECTOR) as HTMLElement;
-    if (!player) {
-      this.isAdjustingWidth = false;
-      return;
-    }
-
-    // Temporarily disconnect observer to prevent loops
-    this.widthObserver?.disconnect();
-
-    const twitchWidth =
-      parseFloat(player.style.width) || player.getBoundingClientRect().width;
-    const fullWidth = twitchWidth + this.savedRightColWidth;
-
-    player.style.setProperty('width', `${fullWidth}px`, 'important');
-    player.style.setProperty('transform-origin', 'center top', 'important');
-
-    // Reconnect observer and adjust info after a frame
-    requestAnimationFrame(() => {
-      this.adjustInfoMargin();
-      if (this.isFakeCollapsed) {
-        this.reconnectWidthObserver(player);
-      }
-      this.isAdjustingWidth = false;
-    });
-  }
-
-  private restorePlayerWidth(): void {
-    const player = document.querySelector(PLAYER_SELECTOR) as HTMLElement;
-    if (player) {
-      player.style.removeProperty('width');
-      player.style.removeProperty('transform-origin');
-    }
-  }
-
-  /**
-   * The info section below the player has margin-top matching the
-   * player height. When we expand the player, we need to update this.
-   */
-  private adjustInfoMargin(): void {
-    const player = document.querySelector(PLAYER_SELECTOR) as HTMLElement;
-    const info = document.querySelector(INFO_SELECTOR) as HTMLElement;
-    if (player && info) {
-      const playerHeight = player.getBoundingClientRect().height;
-      if (playerHeight > 0) {
-        info.style.setProperty('margin-top', `${playerHeight}px`, 'important');
-      }
-    }
-  }
-
-  private restoreInfoMargin(): void {
-    const info = document.querySelector(INFO_SELECTOR) as HTMLElement;
-    if (info) {
-      info.style.removeProperty('margin-top');
-    }
+  private applyFakeCollapse(): void {
+    this.updateSidebarVar();
+    document.body.classList.add('tss-chat-hidden');
+    this.isFakeCollapsed = true;
+    this.showFloatingButton();
   }
 
   // ---------------------------------------------------------------------------
-  // Width watcher — re-apply our override when Twitch resets the width
+  // Resize handler — re-sync sidebar var on window resize
   // ---------------------------------------------------------------------------
 
-  private setupWidthWatcher(): void {
-    const player = document.querySelector(PLAYER_SELECTOR) as HTMLElement;
-    if (!player) return;
-
-    this.reconnectWidthObserver(player);
-
-    // Also handle window resize
+  private setupResizeHandler(): void {
+    if (this.resizeHandler) return;
     this.resizeHandler = () => {
       if (this.isFakeCollapsed) {
-        // Twitch recalculates player width on resize; wait for it, then re-adjust
-        setTimeout(() => this.adjustPlayerWidth(), 150);
+        this.updateSidebarVar();
       }
     };
     window.addEventListener('resize', this.resizeHandler);
-  }
-
-  private reconnectWidthObserver(player: HTMLElement): void {
-    this.widthObserver?.disconnect();
-    this.widthObserver = new MutationObserver(() => {
-      if (this.isFakeCollapsed && !this.isAdjustingWidth) {
-        this.adjustPlayerWidth();
-      }
-    });
-    this.widthObserver.observe(player, {
-      attributes: true,
-      attributeFilter: ['style'],
-    });
   }
 
   // ---------------------------------------------------------------------------

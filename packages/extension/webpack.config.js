@@ -1,5 +1,6 @@
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
+const rootPkg = require('../../package.json');
 
 /** @type {import('webpack').Configuration} */
 module.exports = {
@@ -32,7 +33,15 @@ module.exports = {
   plugins: [
     new CopyPlugin({
       patterns: [
-        { from: 'manifest.json', to: 'manifest.json' },
+        {
+          from: 'manifest.json',
+          to: 'manifest.json',
+          transform(content) {
+            const manifest = JSON.parse(content.toString());
+            manifest.version = rootPkg.version;
+            return JSON.stringify(manifest, null, 2);
+          },
+        },
         { from: 'src/devtools/devtools.html', to: 'devtools/devtools.html' },
         { from: 'src/devtools/panel/panel.html', to: 'devtools/panel/panel.html' },
         { from: 'src/devtools/panel/styles', to: 'devtools/panel/styles' },

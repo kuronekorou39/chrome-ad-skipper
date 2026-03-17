@@ -6,6 +6,7 @@ import { Bridge } from './bridge';
 import { StreamSwapper } from './stream-swapper';
 import { PointsClaimer } from './points-claimer';
 import { VodAdHandler } from './vod-ad-handler';
+import { LiveAdHandler } from './live-ad-handler';
 import { ChatKeeper } from './chat-keeper';
 import { setOverlayOpacity } from './skip-overlay';
 
@@ -108,6 +109,9 @@ const pointsClaimer = new PointsClaimer();
 // Set up VOD ad handler (mute + fast-forward)
 const vodAdHandler = new VodAdHandler();
 
+// Set up live ad handler (mute + speedup fallback when PbyP swap is unavailable)
+const liveAdHandler = new LiveAdHandler(() => streamSwapper.isSwapping);
+
 // Keep chat open in the background so PbyP player stays available for swap
 const chatKeeper = new ChatKeeper();
 
@@ -120,6 +124,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       swap: streamSwapper.getStatus(),
       points: pointsClaimer.getStatus(),
       vodAd: vodAdHandler.getStatus(),
+      liveAd: liveAdHandler.getStatus(),
+      chat: chatKeeper.getStatus(),
     });
     return true;
   }
@@ -127,15 +133,19 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 // Load settings and start modules conditionally
 chrome.storage.local.get(
-  ['streamSwapEnabled', 'vodAdSkipEnabled', 'autoPointsEnabled', 'chatKeeperEnabled', 'overlayOpacity'],
+  ['streamSwapEnabled', 'vodAdSkipEnabled', 'autoPointsEnabled', 'chatKeeperEnabled', 'liveAdMuteEnabled', 'adPlaybackRate', 'overlayOpacity'],
   (data) => {
     const swapEnabled = data.streamSwapEnabled !== false;
     const vodEnabled = data.vodAdSkipEnabled !== false;
     const pointsEnabled = data.autoPointsEnabled !== false;
     const chatEnabled = data.chatKeeperEnabled !== false;
+    const liveAdEnabled = data.liveAdMuteEnabled !== false;
 
     if (data.overlayOpacity !== undefined) {
       setOverlayOpacity(data.overlayOpacity);
+    }
+    if (data.adPlaybackRate !== undefined) {
+      liveAdHandler.setPlaybackRate(data.adPlaybackRate);
     }
 
     streamSwapper.setEnabled(swapEnabled);
@@ -145,6 +155,7 @@ chrome.storage.local.get(
     if (vodEnabled) vodAdHandler.start();
     if (pointsEnabled) pointsClaimer.start();
     if (chatEnabled) chatKeeper.start();
+    if (liveAdEnabled) liveAdHandler.start();
   },
 );
 
@@ -175,6 +186,16 @@ chrome.storage.onChanged.addListener((changes, area) => {
     } else {
       chatKeeper.start();
     }
+  }
+  if (changes.liveAdMuteEnabled) {
+    if (changes.liveAdMuteEnabled.newValue === false) {
+      liveAdHandler.stop();
+    } else {
+      liveAdHandler.start();
+    }
+  }
+  if (changes.adPlaybackRate) {
+    liveAdHandler.setPlaybackRate(changes.adPlaybackRate.newValue);
   }
   if (changes.overlayOpacity) {
     setOverlayOpacity(changes.overlayOpacity.newValue);

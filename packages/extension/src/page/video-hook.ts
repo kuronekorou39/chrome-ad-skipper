@@ -64,18 +64,22 @@ function handleSwapMessage(event: MessageEvent): void {
   if (!data || data.source !== MESSAGE_SOURCE.CONTENT) return;
 
   if (data.type === 'swap-activate') {
-    activateSwapOverrides();
+    const subIndex: number | undefined = data.data?.subVideoIndex;
+    activateSwapOverrides(subIndex);
   } else if (data.type === 'swap-deactivate') {
     deactivateSwapOverrides();
   }
 }
 
-function activateSwapOverrides(): void {
-  // Find all video elements — Video #1 is the sub-stream
+function activateSwapOverrides(subVideoIndex?: number): void {
   const videos = document.querySelectorAll<HTMLVideoElement>('video');
   if (videos.length < 2) return;
 
-  swapTargetVideo = videos[1];
+  // Use the index passed from content script; fall back to [1] if unavailable
+  const idx = (subVideoIndex !== undefined && subVideoIndex >= 0 && subVideoIndex < videos.length)
+    ? subVideoIndex
+    : 1;
+  swapTargetVideo = videos[idx];
   swapActive = true;
 
   console.log('[VideoHook] Swap overrides activated');

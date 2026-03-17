@@ -2,7 +2,14 @@ const connectionEl = document.getElementById('connection')!;
 const statusPanel = document.getElementById('status-panel')!;
 const logEl = document.getElementById('log')!;
 const tabStatus = document.getElementById('tab-status')!;
+const tabLog = document.getElementById('tab-log')!;
 const tabSettings = document.getElementById('tab-settings')!;
+
+const TAB_ELEMENTS: Record<string, HTMLElement> = {
+  status: tabStatus,
+  log: tabLog,
+  settings: tabSettings,
+};
 
 type Site = 'twitch' | 'prime' | 'other';
 
@@ -29,15 +36,11 @@ document.querySelectorAll<HTMLButtonElement>('.tab-btn').forEach((btn) => {
     document.querySelectorAll<HTMLButtonElement>('.tab-btn').forEach((b) => b.classList.remove('active'));
     btn.classList.add('active');
 
-    const tab = btn.dataset.tab;
-    if (tab === 'status') {
-      tabStatus.classList.remove('hidden');
-      tabSettings.classList.add('hidden');
-    } else {
-      tabStatus.classList.add('hidden');
-      tabSettings.classList.remove('hidden');
-      renderSettingsTab();
+    const tab = btn.dataset.tab ?? 'status';
+    for (const [key, el] of Object.entries(TAB_ELEMENTS)) {
+      el.classList.toggle('hidden', key !== tab);
     }
+    if (tab === 'settings') renderSettingsTab();
   });
 });
 
@@ -48,6 +51,8 @@ interface SettingsData {
   vodAdSkipEnabled: boolean;
   autoPointsEnabled: boolean;
   chatKeeperEnabled: boolean;
+  liveAdMuteEnabled: boolean;
+  adPlaybackRate: number;
   pvAutoSkip: boolean;
   overlayOpacity: number;
 }
@@ -57,6 +62,8 @@ const DEFAULTS: SettingsData = {
   vodAdSkipEnabled: true,
   autoPointsEnabled: true,
   chatKeeperEnabled: true,
+  liveAdMuteEnabled: true,
+  adPlaybackRate: 16,
   pvAutoSkip: true,
   overlayOpacity: 85,
 };
@@ -80,6 +87,12 @@ function renderSettingsTab(): void {
     twitchSection.appendChild(createToggleRow('チャット維持', data.chatKeeperEnabled, (v) => {
       chrome.storage.local.set({ chatKeeperEnabled: v });
     }));
+    twitchSection.appendChild(createToggleRow('ライブ広告ミュート', data.liveAdMuteEnabled, (v) => {
+      chrome.storage.local.set({ liveAdMuteEnabled: v });
+    }));
+    twitchSection.appendChild(createSliderRow('広告早送り速度', data.adPlaybackRate, (v) => {
+      chrome.storage.local.set({ adPlaybackRate: v });
+    }, { min: 2, max: 16, step: 2, unit: 'x' }));
     tabSettings.appendChild(twitchSection);
 
     // Prime Video section
@@ -134,7 +147,19 @@ function createToggleRow(label: string, checked: boolean, onChange: (v: boolean)
   return row;
 }
 
-function createSliderRow(label: string, value: number, onChange: (v: number) => void): HTMLDivElement {
+interface SliderOptions {
+  min?: number;
+  max?: number;
+  step?: number;
+  unit?: string;
+}
+
+function createSliderRow(label: string, value: number, onChange: (v: number) => void, opts?: SliderOptions): HTMLDivElement {
+  const min = opts?.min ?? 0;
+  const max = opts?.max ?? 100;
+  const step = opts?.step ?? 1;
+  const unit = opts?.unit ?? '%';
+
   const row = document.createElement('div');
   row.className = 'setting-row';
 
@@ -148,16 +173,17 @@ function createSliderRow(label: string, value: number, onChange: (v: number) => 
   const slider = document.createElement('input');
   slider.type = 'range';
   slider.className = 'opacity-slider';
-  slider.min = '0';
-  slider.max = '100';
+  slider.min = String(min);
+  slider.max = String(max);
+  slider.step = String(step);
   slider.value = String(value);
 
   const valueEl = document.createElement('span');
   valueEl.className = 'opacity-value';
-  valueEl.textContent = `${value}%`;
+  valueEl.textContent = `${value}${unit}`;
 
   slider.addEventListener('input', () => {
-    valueEl.textContent = `${slider.value}%`;
+    valueEl.textContent = `${slider.value}${unit}`;
   });
   slider.addEventListener('change', () => {
     onChange(Number(slider.value));
@@ -172,23 +198,37 @@ function createSliderRow(label: string, value: number, onChange: (v: number) => 
 
 // ── Twitch ──
 
+interface TaggedLog {
+  tag: string;
+  cssClass: string;
+  entry: string;
+}
+
+function tagLogs(entries: string[], tag: string, cssClass: string): TaggedLog[] {
+  return entries.map((entry) => ({ tag, cssClass, entry }));
+}
+
 function renderTwitchStatus(data: {
   url: string;
   connected: boolean;
   swap: { state: string; videoCount: number; swapCount: number; log: string[] };
   points?: { claimCount: number; log: string[] };
   vodAd?: { skippedCount: number; log: string[] };
+  liveAd?: { skippedCount: number; isAdPlaying: boolean; log: string[] };
+  chat?: { log: string[] };
 }): void {
   const isSwapping = data.swap.state === 'swapping';
+  const isLiveAdMuting = data.liveAd?.isAdPlaying ?? false;
 
-  const dotClass = isSwapping ? 'dot--yellow' : 'dot--green';
+  const dotClass = (isSwapping || isLiveAdMuting) ? 'dot--yellow' : 'dot--green';
   const channel = data.url.match(/twitch\.tv\/(\w+)/)?.[1] ?? data.url;
   connectionEl.innerHTML = `<span class="dot ${dotClass}"></span>Twitch: ${channel}`;
 
-  const stateLabel = isSwapping ? '広告スワップ中' : '監視中';
-  const stateClass = isSwapping ? 'val--swap' : 'val--idle';
+  const stateLabel = isSwapping ? '広告スワップ中' : isLiveAdMuting ? '広告ミュート中' : '監視中';
+  const stateClass = (isSwapping || isLiveAdMuting) ? 'val--swap' : 'val--idle';
   const pointsClaimed = data.points?.claimCount ?? 0;
   const vodAdsSkipped = data.vodAd?.skippedCount ?? 0;
+  const liveAdsMuted = data.liveAd?.skippedCount ?? 0;
   statusPanel.innerHTML = `
     <div class="status-row">
       <span class="label">ステータス</span>
@@ -203,6 +243,10 @@ function renderTwitchStatus(data: {
       <span>${data.swap.swapCount}</span>
     </div>
     <div class="status-row">
+      <span class="label">広告ミュート (ライブ)</span>
+      <span>${liveAdsMuted}</span>
+    </div>
+    <div class="status-row">
       <span class="label">広告スキップ (VOD)</span>
       <span>${vodAdsSkipped}</span>
     </div>
@@ -212,15 +256,28 @@ function renderTwitchStatus(data: {
     </div>
   `;
 
-  const allLogs = [
-    ...data.swap.log,
-    ...(data.points?.log ?? []),
-    ...(data.vodAd?.log ?? []),
-  ].sort().reverse();
+  const allLogs: TaggedLog[] = [
+    ...tagLogs(data.swap.log, 'SWAP', 'log-tag--swap'),
+    ...tagLogs(data.points?.log ?? [], 'PTS', 'log-tag--pts'),
+    ...tagLogs(data.vodAd?.log ?? [], 'VOD', 'log-tag--vod'),
+    ...tagLogs(data.liveAd?.log ?? [], 'LIVE', 'log-tag--live'),
+    ...tagLogs(data.chat?.log ?? [], 'CHAT', 'log-tag--chat'),
+  ].sort((a, b) => a.entry.localeCompare(b.entry)).reverse();
 
-  if (allLogs.length > 0) {
-    logEl.innerHTML = allLogs
-      .map((entry) => `<div class="log-entry">${escapeHtml(entry)}</div>`)
+  renderLogEntries(allLogs);
+}
+
+function renderLogEntries(logs: TaggedLog[]): void {
+  if (logs.length > 0) {
+    logEl.innerHTML = logs
+      .map(({ tag, cssClass, entry }) => {
+        // Split "[HH:MM:SS] message" into time and message parts
+        const match = entry.match(/^(\[[^\]]+\])\s*(.*)/);
+        if (match) {
+          return `<div class="log-entry"><span class="log-time">${escapeHtml(match[1])}</span> <span class="log-tag ${cssClass}">${tag}</span> ${escapeHtml(match[2])}</div>`;
+        }
+        return `<div class="log-entry"><span class="log-tag ${cssClass}">${tag}</span> ${escapeHtml(entry)}</div>`;
+      })
       .join('');
   } else {
     logEl.textContent = '';
@@ -276,14 +333,10 @@ function renderPrimeStatus(data: {
     });
   });
 
-  if (prime.eventLog.length > 0) {
-    logEl.innerHTML = [...prime.eventLog]
-      .reverse()
-      .map((entry) => `<div class="log-entry">${escapeHtml(entry)}</div>`)
-      .join('');
-  } else {
-    logEl.textContent = '';
-  }
+  const primeLogs = tagLogs(prime.eventLog, 'PV', 'log-tag--vod')
+    .sort((a, b) => a.entry.localeCompare(b.entry))
+    .reverse();
+  renderLogEntries(primeLogs);
 }
 
 // ── Polling ──
