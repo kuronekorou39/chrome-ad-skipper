@@ -1,6 +1,6 @@
 {
   "name": "ad-skipper",
-  "version": "0.1.0",
+  "version": "0.2.7",
   "private": true,
   "workspaces": [
     "packages/shared",
@@ -12,7 +12,9 @@
     "build:shared": "npm run build -w packages/shared",
     "build:extension": "npm run build -w packages/extension",
     "build:analyzer": "npm run build -w packages/segment-analyzer",
-    "clean": "npm run clean --workspaces"
+    "clean": "npm run clean --workspaces",
+    "bump:patch": "npm version patch --no-git-tag-version",
+    "bump:minor": "npm version minor --no-git-tag-version"
   },
   "devDependencies": {
     "typescript": "^5.4.0"

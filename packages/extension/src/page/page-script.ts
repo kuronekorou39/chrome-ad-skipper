@@ -1,6 +1,7 @@
 import { setupMediaSourceHook } from './mediasource-hook';
 import { setupFetchHook } from './fetch-hook';
 import { setupVideoHook } from './video-hook';
+import { setupPlaybackRateLock } from './playback-rate-lock';
 
 /**
  * MAIN world script — runs in the page's JavaScript context.
@@ -12,3 +13,4 @@ console.log('[Twitch HLS Inspector] Page script loaded (MAIN world)');
 setupMediaSourceHook();
 setupFetchHook();
 setupVideoHook();
+setupPlaybackRateLock();

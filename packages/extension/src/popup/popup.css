@@ -131,25 +131,44 @@ h1 {
   border-color: #f44336;
 }
 
-#log {
-  font-size: 10px;
-  color: #777;
-  max-height: 160px;
+/* ── Log tab ── */
+
+#tab-log {
+  max-height: 360px;
   overflow-y: auto;
-  border-top: 1px solid #2a2a4a;
-  padding-top: 6px;
 }
 
-#log:empty {
-  display: none;
+#log {
+  font-size: 10px;
+  color: #999;
+}
+
+#log:empty::before {
+  content: 'ログなし';
+  color: #555;
 }
 
 .log-entry {
-  padding: 1px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  padding: 2px 0;
+  line-height: 1.4;
+  border-bottom: 1px solid #1e1e3a;
+  word-break: break-all;
 }
+
+.log-entry .log-time {
+  color: #666;
+}
+
+.log-entry .log-tag {
+  font-weight: bold;
+  margin-right: 2px;
+}
+
+.log-tag--swap { color: #e67e22; }
+.log-tag--live { color: #e74c3c; }
+.log-tag--vod { color: #9b59b6; }
+.log-tag--pts { color: #2ecc71; }
+.log-tag--chat { color: #3498db; }
 
 /* ── Settings tab ── */
 

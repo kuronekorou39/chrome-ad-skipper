@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "広告スキッパー",
-  "version": "0.2.0",
+  "version": "0.0.0",
   "description": "Twitch広告スワップ + Prime Video広告スキップ",
   "permissions": [
     "webRequest",

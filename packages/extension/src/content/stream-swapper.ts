@@ -1,4 +1,5 @@
 import { MESSAGE_SOURCE } from '@twitch-swap/shared';
+import { isAdBreakActive } from './ad-detection';
 
 /**
  * Swaps the sub-stream over the ad during Twitch ad breaks.
@@ -16,7 +17,7 @@ export interface SwapStatus {
   log: string[];
 }
 
-const MAX_LOG_ENTRIES = 20;
+const MAX_LOG_ENTRIES = 80;
 
 type SwapStateCallback = (state: 'idle' | 'swapping') => void;
 
@@ -31,6 +32,7 @@ export class StreamSwapper {
   private unmuteInterval: ReturnType<typeof setInterval> | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private subVideoWasPlaying = false;
+  private subPausedTicks = 0;
   /** Saved parent/sibling so we can restore the sub-video after swap */
   private subVideoOriginalParent: ParentNode | null = null;
   private subVideoNextSibling: Node | null = null;
@@ -40,6 +42,13 @@ export class StreamSwapper {
   private stateCallbacks: SwapStateCallback[] = [];
   /** Polls newly appeared videos that may not have loaded yet */
   private pendingCheckInterval: ReturnType<typeof setInterval> | null = null;
+  /** The video count when the current pending check started */
+  private pendingCheckVideoCount = 0;
+
+  /** Whether a swap is currently active (used by LiveAdHandler to avoid conflicts) */
+  get isSwapping(): boolean {
+    return this.isSwapped;
+  }
 
   onStateChange(cb: SwapStateCallback): void {
     this.stateCallbacks.push(cb);
@@ -90,15 +99,28 @@ export class StreamSwapper {
     );
   }
 
-  /** Check if Twitch is actually showing an ad break (DOM indicators). */
-  private isAdBreakActive(): boolean {
-    // Ad banner text ("right after this ad break")
-    if (document.querySelector('[data-test-selector="ad-banner-default-text"]')) return true;
-    if (document.querySelector('span.tw-c-text-overlay')) return true;
-    // ax-overlay with active ad content (childElementCount > 2)
-    const ax = document.querySelector('[data-a-target="ax-overlay"]');
-    if (ax && ax.parentNode instanceof HTMLElement && ax.parentNode.childElementCount > 2) return true;
-    return false;
+  /** Dump per-video diagnostics for debugging */
+  private dumpVideos(videos: HTMLVideoElement[], label: string): void {
+    for (let i = 0; i < videos.length; i++) {
+      const v = videos[i];
+      const ariaLabel = v.getAttribute('aria-label') ?? '(none)';
+      const inAxOverlay = v.closest('[data-a-target="ax-overlay"]') !== null;
+      const inDOM = document.contains(v);
+      const parentTag = v.parentElement?.tagName ?? '?';
+      const parentClass = v.parentElement?.className?.slice(0, 60) ?? '';
+      this.log(
+        `${label} video[${i}]: ` +
+        `ready=${v.readyState} ` +
+        `size=${v.videoWidth}x${v.videoHeight} ` +
+        `muted=${v.muted} ` +
+        `paused=${v.paused} ` +
+        `aria="${ariaLabel}" ` +
+        `axOverlay=${inAxOverlay} ` +
+        `isAd=${this.isAdVideo(v)} ` +
+        `inDOM=${inDOM} ` +
+        `parent=<${parentTag} class="${parentClass}">`,
+      );
+    }
   }
 
   onVideoElementsChanged(allVideos: HTMLVideoElement[]): void {
@@ -107,19 +129,32 @@ export class StreamSwapper {
     const active = allVideos.filter((v) => this.isActive(v));
     this.log(`Videos: ${allVideos.length} total, ${active.length} active`);
 
+    // Dump detailed video state when multiple videos exist (ad detection scenario)
+    if (allVideos.length >= 2) {
+      this.dumpVideos(allVideos, 'changed');
+      this.log(`adBreakActive=${isAdBreakActive()}`);
+    }
+
     // Continuously track the main player (the sole active video when not swapping)
     if (!this.isSwapped && active.length === 1) {
       this.originalVideo = active[0];
     }
 
     if (!this.isSwapped) {
+      // Only reset pending poll if the video element set actually changed
+      // (prevents frequent DOM mutations from restarting the countdown)
+      if (this.pendingCheckInterval !== null && allVideos.length === this.pendingCheckVideoCount) {
+        // Same video count — let the existing poll continue
+        return;
+      }
       this.clearPendingCheck();
       if (active.length >= 2) {
-        if (this.isAdBreakActive()) {
+        if (isAdBreakActive()) {
           this.activateSwap(active);
         } else {
-          // Two videos but no ad DOM indicators — not a real ad break
-          this.log('Two active videos but no ad indicators — skipping swap');
+          // PbyP video appeared but ad indicators not in DOM yet — wait for them
+          this.log('Two active videos but no ad indicators yet — waiting');
+          this.waitForAdIndicators(active);
         }
       } else if (allVideos.length >= 2 && active.length < 2) {
         // Multiple video elements exist but not all active yet — poll
@@ -133,26 +168,81 @@ export class StreamSwapper {
 
   /**
    * Some video elements may appear empty (readyState=0) briefly before loading.
-   * Poll for up to 3 seconds; if a second active video appears, activate swap.
-   * If none appears, they're just empty placeholders — do nothing.
+   * Poll until both are active, then hand off to waitForAdIndicators.
    */
   private waitForActiveVideos(allVideos: HTMLVideoElement[]): void {
     let checks = 0;
+    this.pendingCheckVideoCount = allVideos.length;
+    this.log(`Polling ${allVideos.length} videos for active state...`);
     this.pendingCheckInterval = setInterval(() => {
       checks++;
-      const active = allVideos.filter(
-        (v) => document.contains(v) && this.isActive(v),
-      );
-      if (active.length >= 2 && this.isAdBreakActive()) {
+      const alive = allVideos.filter((v) => document.contains(v));
+      const active = alive.filter((v) => this.isActive(v));
+
+      // Log details every 5th check (1s intervals) and on the last check
+      if (checks % 5 === 1 || checks >= 30) {
+        this.log(`Poll #${checks}: ${alive.length} in DOM, ${active.length} active, adBreak=${isAdBreakActive()}`);
+        this.dumpVideos(alive, `poll#${checks}`);
+      }
+
+      if (active.length >= 2 && isAdBreakActive()) {
         this.clearPendingCheck();
         this.log('Second active video appeared — activating swap');
         this.activateSwap(active);
-      } else if (active.length >= 2 && !this.isAdBreakActive()) {
+      } else if (active.length >= 2 && !isAdBreakActive()) {
+        // Videos ready but ad indicators not yet — switch to ad indicator wait
         this.clearPendingCheck();
-        this.log('Second active video but no ad indicators — skipping swap');
-      } else if (checks >= 15) {
+        this.log('Videos active but no ad indicators yet — waiting');
+        this.waitForAdIndicators(active);
+      } else if (checks >= 30) {
+        // 30 × 200ms = 6s — enough for slow networks
         this.clearPendingCheck();
-        this.log('No second active video — not an ad');
+        this.log('No second active video after 6s — not an ad');
+      }
+    }, 200);
+  }
+
+  /**
+   * Two active videos exist (PbyP appeared) but ad DOM indicators haven't
+   * shown up yet. Twitch adds the ad banner ~10s after the PbyP stream starts.
+   * Poll for up to 20 seconds waiting for isAdBreakActive() to become true.
+   */
+  private waitForAdIndicators(activeVideos: HTMLVideoElement[]): void {
+    let checks = 0;
+    const MAX_CHECKS = 100; // 100 × 200ms = 20s
+    this.pendingCheckVideoCount = activeVideos.length;
+    this.log('Waiting for ad indicators (up to 20s)...');
+    this.pendingCheckInterval = setInterval(() => {
+      checks++;
+
+      if (isAdBreakActive()) {
+        this.clearPendingCheck();
+        // Re-check which videos are still active
+        const stillActive = activeVideos.filter(
+          (v) => document.contains(v) && this.isActive(v),
+        );
+        if (stillActive.length >= 2) {
+          this.log(`Ad indicators appeared after ${(checks * 0.2).toFixed(1)}s — activating swap`);
+          this.activateSwap(stillActive);
+        } else {
+          this.log('Ad indicators appeared but videos changed — falling back to LiveAdHandler');
+        }
+        return;
+      }
+
+      // Check if the second video disappeared (no longer an ad scenario)
+      const stillActive = activeVideos.filter(
+        (v) => document.contains(v) && this.isActive(v),
+      );
+      if (stillActive.length < 2) {
+        this.clearPendingCheck();
+        this.log('Second video disappeared while waiting — not an ad');
+        return;
+      }
+
+      if (checks >= MAX_CHECKS) {
+        this.clearPendingCheck();
+        this.log('No ad indicators after 20s — not an ad');
       }
     }, 200);
   }
@@ -161,6 +251,7 @@ export class StreamSwapper {
     if (this.pendingCheckInterval !== null) {
       clearInterval(this.pendingCheckInterval);
       this.pendingCheckInterval = null;
+      this.pendingCheckVideoCount = 0;
     }
   }
 
@@ -210,20 +301,46 @@ export class StreamSwapper {
     this.subVideo.muted = false;
     this.subVideo.volume = this.savedVolume;
 
-    // Polling: maintain unmuted state + detect ad end (sub-video paused)
+    // Polling: maintain audio state + detect ad end (sub-video paused)
     this.unmuteInterval = setInterval(() => {
       if (!this.subVideo || !this.isSwapped) return;
 
+      // Keep ad video muted (Twitch player may un-mute it)
+      if (this.adVideo && !this.adVideo.muted) {
+        this.adVideo.muted = true;
+      }
+      if (this.adVideo && this.adVideo.volume > 0) {
+        this.adVideo.volume = 0;
+      }
+
       if (!this.subVideo.paused) {
         this.subVideoWasPlaying = true;
+        this.subPausedTicks = 0;
       }
 
       if (this.subVideoWasPlaying && this.subVideo.paused) {
-        this.log('Sub-video paused — ad likely ended');
-        this.deactivateSwap();
-        return;
+        if (!isAdBreakActive()) {
+          // Sub-video paused AND ad indicators gone → ad really ended
+          this.log('Sub-video paused + no ad indicators — ad ended');
+          this.deactivateSwap();
+          return;
+        }
+        // Ad still active but sub-video paused — give it time to resume
+        this.subPausedTicks++;
+        if (this.subPausedTicks === 1) {
+          this.log('Sub-video paused mid-ad — waiting for resume');
+          // Try to resume playback
+          this.subVideo.play().catch(() => {});
+        }
+        // After ~3s (15 ticks × 200ms) give up and let LiveAdHandler take over
+        if (this.subPausedTicks >= 15) {
+          this.log('Sub-video stayed paused for 3s — deactivating swap');
+          this.deactivateSwap();
+          return;
+        }
       }
 
+      // Keep sub-video unmuted with correct volume
       if (this.subVideo.muted) {
         this.subVideo.muted = false;
       }
@@ -237,9 +354,12 @@ export class StreamSwapper {
     this.resizeObserver = new ResizeObserver(() => this.positionSubVideo());
     this.resizeObserver.observe(this.adVideo);
 
-    // Notify page script to install muted/volume setter overrides
+    // Notify page script to install muted/volume setter overrides.
+    // Pass the sub-video's DOM index so the page script protects the correct element.
+    const allVideos = Array.from(document.querySelectorAll('video'));
+    const subIndex = allVideos.indexOf(this.subVideo);
     window.postMessage(
-      { source: MESSAGE_SOURCE.CONTENT, type: 'swap-activate' },
+      { source: MESSAGE_SOURCE.CONTENT, type: 'swap-activate', data: { subVideoIndex: subIndex } },
       '*',
     );
 
@@ -280,6 +400,9 @@ export class StreamSwapper {
   }
 
   private deactivateSwap(): void {
+    // Guard against double-deactivation (unmuteInterval and DomObserver can race)
+    if (!this.isSwapped) return;
+
     this.log('Swap OFF — restoring normal playback');
 
     if (this.unmuteInterval !== null) {
@@ -304,6 +427,7 @@ export class StreamSwapper {
     this.adVideo = null;
     this.subVideo = null;
     this.subVideoWasPlaying = false;
+    this.subPausedTicks = 0;
 
     this.notifyStateChange();
 
