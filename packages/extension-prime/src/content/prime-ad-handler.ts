@@ -217,6 +217,6 @@ export class PrimeAdHandler {
     if (this.eventLog.length > MAX_LOG_ENTRIES) {
       this.eventLog.shift();
     }
-    console.log(`[広告スキッパー:Prime] ${msg}`);
+    console.log(`[Prime Video広告スキッパー] ${msg}`);
   }
 }

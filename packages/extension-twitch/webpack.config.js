@@ -1,13 +1,12 @@
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
-const rootPkg = require('../../package.json');
+const pkg = require('./package.json');
 
 /** @type {import('webpack').Configuration} */
 module.exports = {
   entry: {
     'background/service-worker': './src/background/service-worker.ts',
     'content/content-script': './src/content/content-script.ts',
-    'content/prime-content-script': './src/content/prime-content-script.ts',
     'page/page-script': './src/page/page-script.ts',
     'devtools/devtools': './src/devtools/devtools.ts',
     'devtools/panel/panel': './src/devtools/panel/panel.ts',
@@ -38,7 +37,7 @@ module.exports = {
           to: 'manifest.json',
           transform(content) {
             const manifest = JSON.parse(content.toString());
-            manifest.version = rootPkg.version;
+            manifest.version = pkg.version;
             return JSON.stringify(manifest, null, 2);
           },
         },

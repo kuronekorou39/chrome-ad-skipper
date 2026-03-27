@@ -1,7 +1,7 @@
 import { PrimeAdHandler } from './prime-ad-handler';
 import { setOverlayOpacity } from './skip-overlay';
 
-console.log('[広告スキッパー:Prime] Content script loaded');
+console.log('[Prime Video広告スキッパー] Content script loaded');
 
 const primeAdHandler = new PrimeAdHandler();
 

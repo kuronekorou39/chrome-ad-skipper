@@ -2,7 +2,7 @@ import { setupWebRequestLogger } from './web-request-logger';
 import { dataStore } from './data-store';
 import { broadcastToDevTools, registerDevToolsPort, unregisterDevToolsPort } from './broadcast';
 
-console.log('[広告スキッパー] Service Worker started');
+console.log('[Twitch広告スキッパー] Service Worker started');
 
 // Initialize web request logging
 setupWebRequestLogger();
@@ -17,7 +17,7 @@ chrome.runtime.onConnect.addListener((port) => {
     if (msg.type === 'devtools-init') {
       tabId = msg.tabId;
       registerDevToolsPort(tabId, port);
-      console.log(`[広告スキッパー] DevTools panel connected for tab ${tabId}`);
+      console.log(`[Twitch広告スキッパー] DevTools panel connected for tab ${tabId}`);
 
       dataStore.getAll(tabId).then((data) => {
         port.postMessage({ type: 'devtools-data', data });
@@ -28,7 +28,7 @@ chrome.runtime.onConnect.addListener((port) => {
   port.onDisconnect.addListener(() => {
     if (tabId >= 0) {
       unregisterDevToolsPort(tabId);
-      console.log(`[広告スキッパー] DevTools panel disconnected for tab ${tabId}`);
+      console.log(`[Twitch広告スキッパー] DevTools panel disconnected for tab ${tabId}`);
     }
   });
 });
@@ -51,16 +51,10 @@ chrome.runtime.onMessage.addListener((message, sender) => {
   setTimeout(() => broadcastToDevTools(tabId, message), 0);
 });
 
-// Clear badge when navigating away from supported sites
+// Clear badge when navigating away from Twitch
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.url) {
-    const url = changeInfo.url;
-    const isSupported =
-      url.includes('twitch.tv') ||
-      url.includes('amazon.co') ||
-      url.includes('amazon.com') ||
-      url.includes('primevideo.com');
-    if (!isSupported) {
+    if (!changeInfo.url.includes('twitch.tv')) {
       chrome.action.setBadgeText({ text: '', tabId });
     }
   }

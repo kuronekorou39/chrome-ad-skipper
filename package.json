@@ -4,17 +4,21 @@
   "private": true,
   "workspaces": [
     "packages/shared",
-    "packages/extension",
+    "packages/extension-twitch",
+    "packages/extension-prime",
     "packages/segment-analyzer"
   ],
   "scripts": {
     "build": "npm run build --workspaces",
     "build:shared": "npm run build -w packages/shared",
-    "build:extension": "npm run build -w packages/extension",
+    "build:twitch": "npm run build -w packages/extension-twitch",
+    "build:prime": "npm run build -w packages/extension-prime",
     "build:analyzer": "npm run build -w packages/segment-analyzer",
     "clean": "npm run clean --workspaces",
-    "bump:patch": "npm version patch --no-git-tag-version",
-    "bump:minor": "npm version minor --no-git-tag-version"
+    "bump:twitch:patch": "npm version patch --no-git-tag-version -w packages/extension-twitch",
+    "bump:twitch:minor": "npm version minor --no-git-tag-version -w packages/extension-twitch",
+    "bump:prime:patch": "npm version patch --no-git-tag-version -w packages/extension-prime",
+    "bump:prime:minor": "npm version minor --no-git-tag-version -w packages/extension-prime"
   },
   "devDependencies": {
     "typescript": "^5.4.0"

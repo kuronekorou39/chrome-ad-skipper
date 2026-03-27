@@ -11,13 +11,7 @@ const TAB_ELEMENTS: Record<string, HTMLElement> = {
   settings: tabSettings,
 };
 
-type Site = 'twitch' | 'prime' | 'other';
-
-function detectSite(url: string): Site {
-  if (url.includes('twitch.tv')) return 'twitch';
-  if (url.includes('amazon.co') || url.includes('amazon.com') || url.includes('primevideo.com')) return 'prime';
-  return 'other';
-}
+let currentTabId: number | null = null;
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -47,23 +41,11 @@ document.querySelectorAll<HTMLButtonElement>('.tab-btn').forEach((btn) => {
 // ── Settings ──
 
 interface SettingsData {
-  streamSwapEnabled: boolean;
-  vodAdSkipEnabled: boolean;
-  autoPointsEnabled: boolean;
-  chatKeeperEnabled: boolean;
-  liveAdMuteEnabled: boolean;
-  adPlaybackRate: number;
   pvAutoSkip: boolean;
   overlayOpacity: number;
 }
 
 const DEFAULTS: SettingsData = {
-  streamSwapEnabled: true,
-  vodAdSkipEnabled: true,
-  autoPointsEnabled: true,
-  chatKeeperEnabled: true,
-  liveAdMuteEnabled: true,
-  adPlaybackRate: 16,
   pvAutoSkip: true,
   overlayOpacity: 85,
 };
@@ -72,28 +54,6 @@ function renderSettingsTab(): void {
   chrome.storage.local.get(Object.keys(DEFAULTS), (raw) => {
     const data: SettingsData = { ...DEFAULTS, ...raw };
     tabSettings.innerHTML = '';
-
-    // Twitch section
-    const twitchSection = createSection('Twitch');
-    twitchSection.appendChild(createToggleRow('広告スワップ (ライブ)', data.streamSwapEnabled, (v) => {
-      chrome.storage.local.set({ streamSwapEnabled: v });
-    }));
-    twitchSection.appendChild(createToggleRow('VOD広告スキップ', data.vodAdSkipEnabled, (v) => {
-      chrome.storage.local.set({ vodAdSkipEnabled: v });
-    }));
-    twitchSection.appendChild(createToggleRow('ポイント自動取得', data.autoPointsEnabled, (v) => {
-      chrome.storage.local.set({ autoPointsEnabled: v });
-    }));
-    twitchSection.appendChild(createToggleRow('チャット維持', data.chatKeeperEnabled, (v) => {
-      chrome.storage.local.set({ chatKeeperEnabled: v });
-    }));
-    twitchSection.appendChild(createToggleRow('ライブ広告ミュート', data.liveAdMuteEnabled, (v) => {
-      chrome.storage.local.set({ liveAdMuteEnabled: v });
-    }));
-    twitchSection.appendChild(createSliderRow('広告早送り速度', data.adPlaybackRate, (v) => {
-      chrome.storage.local.set({ adPlaybackRate: v });
-    }, { min: 2, max: 16, step: 2, unit: 'x' }));
-    tabSettings.appendChild(twitchSection);
 
     // Prime Video section
     const primeSection = createSection('Prime Video');
@@ -147,14 +107,7 @@ function createToggleRow(label: string, checked: boolean, onChange: (v: boolean)
   return row;
 }
 
-interface SliderOptions {
-  min?: number;
-  max?: number;
-  step?: number;
-  unit?: string;
-}
-
-function createSliderRow(label: string, value: number, onChange: (v: number) => void, opts?: SliderOptions): HTMLDivElement {
+function createSliderRow(label: string, value: number, onChange: (v: number) => void, opts?: { min?: number; max?: number; step?: number; unit?: string }): HTMLDivElement {
   const min = opts?.min ?? 0;
   const max = opts?.max ?? 100;
   const step = opts?.step ?? 1;
@@ -196,97 +149,13 @@ function createSliderRow(label: string, value: number, onChange: (v: number) => 
   return row;
 }
 
-// ── Twitch ──
+// ── Status ──
 
 interface TaggedLog {
   tag: string;
   cssClass: string;
   entry: string;
 }
-
-function tagLogs(entries: string[], tag: string, cssClass: string): TaggedLog[] {
-  return entries.map((entry) => ({ tag, cssClass, entry }));
-}
-
-function renderTwitchStatus(data: {
-  url: string;
-  connected: boolean;
-  swap: { state: string; videoCount: number; swapCount: number; log: string[] };
-  points?: { claimCount: number; log: string[] };
-  vodAd?: { skippedCount: number; log: string[] };
-  liveAd?: { skippedCount: number; isAdPlaying: boolean; log: string[] };
-  chat?: { log: string[] };
-}): void {
-  const isSwapping = data.swap.state === 'swapping';
-  const isLiveAdMuting = data.liveAd?.isAdPlaying ?? false;
-
-  const dotClass = (isSwapping || isLiveAdMuting) ? 'dot--yellow' : 'dot--green';
-  const channel = data.url.match(/twitch\.tv\/(\w+)/)?.[1] ?? data.url;
-  connectionEl.innerHTML = `<span class="dot ${dotClass}"></span>Twitch: ${channel}`;
-
-  const stateLabel = isSwapping ? '広告スワップ中' : isLiveAdMuting ? '広告ミュート中' : '監視中';
-  const stateClass = (isSwapping || isLiveAdMuting) ? 'val--swap' : 'val--idle';
-  const pointsClaimed = data.points?.claimCount ?? 0;
-  const vodAdsSkipped = data.vodAd?.skippedCount ?? 0;
-  const liveAdsMuted = data.liveAd?.skippedCount ?? 0;
-  statusPanel.innerHTML = `
-    <div class="status-row">
-      <span class="label">ステータス</span>
-      <span class="${stateClass}">${stateLabel}</span>
-    </div>
-    <div class="status-row">
-      <span class="label">ビデオ数</span>
-      <span>${data.swap.videoCount}</span>
-    </div>
-    <div class="status-row">
-      <span class="label">広告スワップ (ライブ)</span>
-      <span>${data.swap.swapCount}</span>
-    </div>
-    <div class="status-row">
-      <span class="label">広告ミュート (ライブ)</span>
-      <span>${liveAdsMuted}</span>
-    </div>
-    <div class="status-row">
-      <span class="label">広告スキップ (VOD)</span>
-      <span>${vodAdsSkipped}</span>
-    </div>
-    <div class="status-row">
-      <span class="label">ポイント取得</span>
-      <span>${pointsClaimed}</span>
-    </div>
-  `;
-
-  const allLogs: TaggedLog[] = [
-    ...tagLogs(data.swap.log, 'SWAP', 'log-tag--swap'),
-    ...tagLogs(data.points?.log ?? [], 'PTS', 'log-tag--pts'),
-    ...tagLogs(data.vodAd?.log ?? [], 'VOD', 'log-tag--vod'),
-    ...tagLogs(data.liveAd?.log ?? [], 'LIVE', 'log-tag--live'),
-    ...tagLogs(data.chat?.log ?? [], 'CHAT', 'log-tag--chat'),
-  ].sort((a, b) => a.entry.localeCompare(b.entry)).reverse();
-
-  renderLogEntries(allLogs);
-}
-
-function renderLogEntries(logs: TaggedLog[]): void {
-  if (logs.length > 0) {
-    logEl.innerHTML = logs
-      .map(({ tag, cssClass, entry }) => {
-        // Split "[HH:MM:SS] message" into time and message parts
-        const match = entry.match(/^(\[[^\]]+\])\s*(.*)/);
-        if (match) {
-          return `<div class="log-entry"><span class="log-time">${escapeHtml(match[1])}</span> <span class="log-tag ${cssClass}">${tag}</span> ${escapeHtml(match[2])}</div>`;
-        }
-        return `<div class="log-entry"><span class="log-tag ${cssClass}">${tag}</span> ${escapeHtml(entry)}</div>`;
-      })
-      .join('');
-  } else {
-    logEl.textContent = '';
-  }
-}
-
-// ── Prime Video ──
-
-let currentTabId: number | null = null;
 
 function renderPrimeStatus(data: {
   url: string;
@@ -333,10 +202,27 @@ function renderPrimeStatus(data: {
     });
   });
 
-  const primeLogs = tagLogs(prime.eventLog, 'PV', 'log-tag--vod')
+  const primeLogs: TaggedLog[] = prime.eventLog
+    .map((entry) => ({ tag: 'PV', cssClass: 'log-tag--vod', entry }))
     .sort((a, b) => a.entry.localeCompare(b.entry))
     .reverse();
   renderLogEntries(primeLogs);
+}
+
+function renderLogEntries(logs: TaggedLog[]): void {
+  if (logs.length > 0) {
+    logEl.innerHTML = logs
+      .map(({ tag, cssClass, entry }) => {
+        const match = entry.match(/^(\[[^\]]+\])\s*(.*)/);
+        if (match) {
+          return `<div class="log-entry"><span class="log-time">${escapeHtml(match[1])}</span> <span class="log-tag ${cssClass}">${tag}</span> ${escapeHtml(match[2])}</div>`;
+        }
+        return `<div class="log-entry"><span class="log-tag ${cssClass}">${tag}</span> ${escapeHtml(entry)}</div>`;
+      })
+      .join('');
+  } else {
+    logEl.textContent = '';
+  }
 }
 
 // ── Polling ──
@@ -349,28 +235,26 @@ function poll(): void {
       return;
     }
 
-    const site = detectSite(tab.url);
+    const url = tab.url;
+    const isPrime =
+      url.includes('amazon.co') ||
+      url.includes('amazon.com') ||
+      url.includes('primevideo.com');
+
+    if (!isPrime) {
+      renderDisconnected('Prime Videoを開いてください');
+      return;
+    }
+
     currentTabId = tab.id;
 
-    if (site === 'twitch') {
-      chrome.tabs.sendMessage(tab.id, { type: 'get-swap-status' }, (response) => {
-        if (chrome.runtime.lastError || !response) {
-          renderDisconnected('未接続 (Twitch)');
-          return;
-        }
-        renderTwitchStatus(response);
-      });
-    } else if (site === 'prime') {
-      chrome.tabs.sendMessage(tab.id, { type: 'get-prime-status' }, (response) => {
-        if (chrome.runtime.lastError || !response) {
-          renderDisconnected('未接続 (Prime Video)');
-          return;
-        }
-        renderPrimeStatus(response);
-      });
-    } else {
-      renderDisconnected('Twitch / Prime Video を開いてください');
-    }
+    chrome.tabs.sendMessage(tab.id, { type: 'get-prime-status' }, (response) => {
+      if (chrome.runtime.lastError || !response) {
+        renderDisconnected('未接続 (Prime Video)');
+        return;
+      }
+      renderPrimeStatus(response);
+    });
   });
 }
 

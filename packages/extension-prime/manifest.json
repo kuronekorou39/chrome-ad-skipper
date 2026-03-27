@@ -1,18 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "広告スキッパー",
+  "name": "Prime Video広告スキッパー",
   "version": "0.0.0",
-  "description": "Twitch広告スワップ + Prime Video広告スキップ",
+  "description": "Prime Video広告スキップ",
   "permissions": [
-    "webRequest",
     "storage",
     "activeTab"
   ],
   "host_permissions": [
-    "*://*.hls.ttvnw.net/*",
-    "*://*.ttvnw.net/*",
-    "*://*.cloudfront.net/*",
-    "*://*.twitch.tv/*",
     "*://*.amazon.co.jp/*",
     "*://*.amazon.com/*",
     "*://*.primevideo.com/*"
@@ -22,23 +17,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*.twitch.tv/*"],
-      "js": ["content/content-script.js"],
-      "run_at": "document_start"
-    },
-    {
-      "matches": ["*://*.twitch.tv/*"],
-      "js": ["page/page-script.js"],
-      "run_at": "document_start",
-      "world": "MAIN"
-    },
-    {
       "matches": [
         "*://*.amazon.co.jp/*",
         "*://*.amazon.com/*",
         "*://*.primevideo.com/*"
       ],
-      "js": ["content/prime-content-script.js"],
+      "js": ["content/content-script.js"],
       "run_at": "document_idle"
     }
   ],
@@ -47,10 +31,9 @@
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
   },
-  "devtools_page": "devtools/devtools.html",
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "広告スキッパー",
+    "default_title": "Prime Video広告スキッパー",
     "default_icon": {
       "16": "icons/icon-16.png",
       "48": "icons/icon-48.png",
