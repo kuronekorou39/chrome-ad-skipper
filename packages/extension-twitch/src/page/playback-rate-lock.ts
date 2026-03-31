@@ -1,4 +1,4 @@
-import { MESSAGE_SOURCE } from '@twitch-swap/shared';
+import { MESSAGE_SOURCE } from '@ad-skipper/shared';
 
 /**
  * MAIN world module that locks video.playbackRate during ad breaks.

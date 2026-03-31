@@ -1,8 +1,6 @@
 import { PrimeAdHandler } from './prime-ad-handler';
 import { setOverlayOpacity } from './skip-overlay';
 
-console.log('[Prime Video広告スキッパー] Content script loaded');
-
 const primeAdHandler = new PrimeAdHandler();
 
 // Forward badge state to background

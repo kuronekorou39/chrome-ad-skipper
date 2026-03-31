@@ -91,6 +91,5 @@ export class VodAdHandler {
     if (this.eventLog.length > MAX_LOG_ENTRIES) {
       this.eventLog.shift();
     }
-    console.log(`[VodAdHandler] ${msg}`);
   }
 }

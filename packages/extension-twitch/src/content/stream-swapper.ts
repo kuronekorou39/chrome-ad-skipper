@@ -1,4 +1,4 @@
-import { MESSAGE_SOURCE } from '@twitch-swap/shared';
+import { MESSAGE_SOURCE } from '@ad-skipper/shared';
 import { isAdBreakActive } from './ad-detection';
 
 /**
@@ -83,7 +83,6 @@ export class StreamSwapper {
     if (this.eventLog.length > MAX_LOG_ENTRIES) {
       this.eventLog.shift();
     }
-    console.log(`[StreamSwapper] ${msg}`);
   }
 
   /** A video is "active" if it has actual media content loaded */

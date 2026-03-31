@@ -16,7 +16,7 @@ function escapeHtml(s: string): string {
 }
 
 function renderDisconnected(reason: string): void {
-  connectionEl.innerHTML = `<span class="dot dot--red"></span>${reason}`;
+  connectionEl.innerHTML = `<span class="dot dot--red"></span>${escapeHtml(reason)}`;
   statusPanel.textContent = '';
   logEl.textContent = '';
 }

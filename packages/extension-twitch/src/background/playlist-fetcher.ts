@@ -3,8 +3,8 @@ import {
   parseMasterPlaylist,
   isMasterPlaylist,
   analyzeAdBreak,
-} from '@twitch-swap/shared';
-import type { ExtPlaylistUpdate, ExtAdDetected } from '@twitch-swap/shared';
+} from '@ad-skipper/shared';
+import type { ExtPlaylistUpdate, ExtAdDetected } from '@ad-skipper/shared';
 import { broadcastToDevTools } from './broadcast';
 import { dataStore } from './data-store';
 
@@ -31,18 +31,12 @@ class PlaylistFetcher {
     try {
       const response = await fetch(url);
       if (!response.ok) {
-        console.warn(`[PlaylistFetcher] Failed to fetch ${url}: ${response.status}`);
         return;
       }
 
       const text = await response.text();
 
       if (isMasterPlaylist(text)) {
-        const master = parseMasterPlaylist(text, url);
-        console.log(
-          `[PlaylistFetcher] Master playlist: ${master.variants.length} variants`,
-          master.variants.map((v) => `${v.resolution?.width}x${v.resolution?.height} @ ${v.bandwidth}`)
-        );
         return;
       }
 
@@ -61,11 +55,6 @@ class PlaylistFetcher {
       // Check for ads
       if (playlist.adMarkers.length > 0) {
         const adBreak = analyzeAdBreak(playlist);
-        console.log(
-          `[PlaylistFetcher] Ad break detected! Active: ${adBreak.active}, ` +
-          `Duration: ${adBreak.totalDuration}s, Remaining: ${adBreak.remaining}s, ` +
-          `Ad segments: ${adBreak.adSegmentCount}`
-        );
 
         const adMsg: ExtAdDetected = {
           source: 'twitch-swap',
@@ -81,12 +70,8 @@ class PlaylistFetcher {
         broadcastToDevTools(tabId, adMsg);
       }
 
-      console.log(
-        `[PlaylistFetcher] Media playlist: ${playlist.segments.length} segments, ` +
-        `seq=${playlist.mediaSequence}, ads=${playlist.adState}`
-      );
-    } catch (err) {
-      console.warn(`[PlaylistFetcher] Error fetching ${url}:`, err);
+    } catch {
+      // Fetch failed — silently ignore
     }
 
     // Clean up old dedup entries

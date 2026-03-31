@@ -44,7 +44,7 @@ module.exports = {
       ],
     }),
   ],
-  devtool: 'cheap-module-source-map',
+  devtool: false,
   optimization: {
     minimize: false,
   },

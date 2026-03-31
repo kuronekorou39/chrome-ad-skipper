@@ -1,5 +1,5 @@
-import { MESSAGE_SOURCE } from '@twitch-swap/shared';
-import type { MediaSourceEvent } from '@twitch-swap/shared';
+import { MESSAGE_SOURCE } from '@ad-skipper/shared';
+import type { MediaSourceEvent } from '@ad-skipper/shared';
 
 function postEvent(event: MediaSourceEvent): void {
   window.postMessage(
@@ -85,5 +85,4 @@ export function setupMediaSourceHook(): void {
     return originalEndOfStream.call(this, error);
   };
 
-  console.log('[MediaSourceHook] Installed');
 }

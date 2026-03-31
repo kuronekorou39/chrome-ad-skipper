@@ -56,6 +56,5 @@ export class PointsClaimer {
     if (this.eventLog.length > MAX_LOG_ENTRIES) {
       this.eventLog.shift();
     }
-    console.log(`[PointsClaimer] ${msg}`);
   }
 }

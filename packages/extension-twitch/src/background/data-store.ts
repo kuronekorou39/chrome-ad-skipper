@@ -4,8 +4,8 @@ import type {
   VideoElementState,
   MediaSourceEvent,
   ExtensionMessage,
-} from '@twitch-swap/shared';
-import { STORAGE_LIMITS } from '@twitch-swap/shared';
+} from '@ad-skipper/shared';
+import { STORAGE_LIMITS } from '@ad-skipper/shared';
 
 interface TabData {
   networkLogs: NetworkLogEntry[];

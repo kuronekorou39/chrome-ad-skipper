@@ -1,4 +1,4 @@
-import type { VideoElementState } from '@twitch-swap/shared';
+import type { VideoElementState } from '@ad-skipper/shared';
 
 /**
  * Displays the current state of all video elements on the page.

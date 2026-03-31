@@ -1,4 +1,4 @@
-import type { NetworkLogEntry, HlsPlaylist, AdState } from '@twitch-swap/shared';
+import type { NetworkLogEntry, HlsPlaylist, AdState } from '@ad-skipper/shared';
 
 interface TimelineEvent {
   time: number;

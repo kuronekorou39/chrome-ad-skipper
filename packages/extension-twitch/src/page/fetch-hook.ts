@@ -1,4 +1,4 @@
-import { MESSAGE_SOURCE, HLS_EXTENSIONS } from '@twitch-swap/shared';
+import { MESSAGE_SOURCE, HLS_EXTENSIONS } from '@ad-skipper/shared';
 
 /**
  * Hook fetch() to observe HLS-related requests made by the Twitch player.
@@ -32,7 +32,6 @@ export function setupFetchHook(): void {
     return originalFetch.call(this, input, init);
   };
 
-  console.log('[FetchHook] Installed');
 }
 
 function isHlsRelated(url: string): boolean {

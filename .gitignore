@@ -5,7 +5,8 @@ dist/
 
 # Build outputs
 packages/shared/dist/
-packages/extension/dist/
+packages/extension-twitch/dist/
+packages/extension-prime/dist/
 packages/segment-analyzer/dist/
 
 # IDE
@@ -25,6 +26,9 @@ npm-debug.log*
 # Environment
 .env
 .env.local
+
+# Development artifacts
+bk/
 
 # Claude Code
 .claude/

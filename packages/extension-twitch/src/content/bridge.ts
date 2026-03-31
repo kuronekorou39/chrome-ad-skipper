@@ -1,5 +1,5 @@
-import { MESSAGE_SOURCE } from '@twitch-swap/shared';
-import type { PageMessage } from '@twitch-swap/shared';
+import { MESSAGE_SOURCE } from '@ad-skipper/shared';
+import type { PageMessage } from '@ad-skipper/shared';
 
 type MessageCallback = (msg: PageMessage) => void;
 

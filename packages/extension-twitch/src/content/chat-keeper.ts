@@ -67,7 +67,6 @@ export class ChatKeeper {
     if (this.eventLog.length > MAX_LOG_ENTRIES) {
       this.eventLog.shift();
     }
-    console.log(`[ChatKeeper] ${msg}`);
   }
 
   private isTheaterMode(): boolean {

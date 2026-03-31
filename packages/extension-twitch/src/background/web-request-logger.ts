@@ -1,5 +1,5 @@
-import type { NetworkLogEntry, HlsRequestType } from '@twitch-swap/shared';
-import { HLS_EXTENSIONS } from '@twitch-swap/shared';
+import type { NetworkLogEntry, HlsRequestType } from '@ad-skipper/shared';
+import { HLS_EXTENSIONS } from '@ad-skipper/shared';
 import { broadcastToDevTools } from './broadcast';
 import { dataStore } from './data-store';
 import { playlistFetcher } from './playlist-fetcher';
@@ -118,9 +118,6 @@ export function setupWebRequestLogger(): void {
       dataStore.add(entry.tabId, message);
       broadcastToDevTools(entry.tabId, message);
 
-      console.log(
-        `[HLS] ${entry.type}: ${entry.statusCode} ${truncateUrl(entry.url)} (${entry.duration?.toFixed(0)}ms)`
-      );
     },
     { urls: ['<all_urls>'] }
   );
@@ -130,7 +127,6 @@ export function setupWebRequestLogger(): void {
     pendingRequests.delete(details.requestId);
   }, { urls: ['<all_urls>'] });
 
-  console.log('[Twitch HLS Inspector] webRequest logger initialized');
 }
 
 function truncateUrl(url: string): string {

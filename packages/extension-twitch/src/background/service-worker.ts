@@ -2,8 +2,6 @@ import { setupWebRequestLogger } from './web-request-logger';
 import { dataStore } from './data-store';
 import { broadcastToDevTools, registerDevToolsPort, unregisterDevToolsPort } from './broadcast';
 
-console.log('[Twitch広告スキッパー] Service Worker started');
-
 // Initialize web request logging
 setupWebRequestLogger();
 
@@ -17,7 +15,6 @@ chrome.runtime.onConnect.addListener((port) => {
     if (msg.type === 'devtools-init') {
       tabId = msg.tabId;
       registerDevToolsPort(tabId, port);
-      console.log(`[Twitch広告スキッパー] DevTools panel connected for tab ${tabId}`);
 
       dataStore.getAll(tabId).then((data) => {
         port.postMessage({ type: 'devtools-data', data });
@@ -28,7 +25,6 @@ chrome.runtime.onConnect.addListener((port) => {
   port.onDisconnect.addListener(() => {
     if (tabId >= 0) {
       unregisterDevToolsPort(tabId);
-      console.log(`[Twitch広告スキッパー] DevTools panel disconnected for tab ${tabId}`);
     }
   });
 });

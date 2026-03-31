@@ -27,7 +27,6 @@ export class DomObserver {
       subtree: true,
     });
 
-    console.log('[DomObserver] Started watching for video elements');
   }
 
   stop(): void {
@@ -52,7 +51,6 @@ export class DomObserver {
 
     if (changed) {
       this.knownVideos = currentVideos;
-      console.log(`[DomObserver] Video elements: ${videoArray.length}`);
       for (const cb of this.callbacks) {
         cb(videoArray);
       }

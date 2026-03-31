@@ -1,5 +1,5 @@
-import { MESSAGE_SOURCE } from '@twitch-swap/shared';
-import type { PageMessage, ExtVideoStateUpdate, ExtMediaSourceUpdate } from '@twitch-swap/shared';
+import { MESSAGE_SOURCE } from '@ad-skipper/shared';
+import type { PageMessage, ExtVideoStateUpdate, ExtMediaSourceUpdate } from '@ad-skipper/shared';
 import { DomObserver } from './dom-observer';
 import { VideoTracker } from './video-tracker';
 import { Bridge } from './bridge';
@@ -9,8 +9,6 @@ import { VodAdHandler } from './vod-ad-handler';
 import { LiveAdHandler } from './live-ad-handler';
 import { ChatKeeper } from './chat-keeper';
 import { setOverlayOpacity } from './skip-overlay';
-
-console.log('[広告スキッパー:Twitch] Content script loaded');
 
 /** Safely send a message to the background. Stops polling if context is dead. */
 function safeSendMessage(msg: unknown): void {
@@ -47,11 +45,9 @@ bridge.onMessage((msg: PageMessage) => {
     }
 
     case 'fetch-intercept':
-      console.log('[広告スキッパー:Twitch] Fetch intercepted:', msg.data.url);
       break;
 
     case 'video-event':
-      console.log('[広告スキッパー:Twitch] Video event:', msg.data.event, msg.data.src);
       break;
   }
 });
@@ -90,7 +86,6 @@ domObserver.onVideoElementsChanged((videos) => {
 
 // When video tracker has state updates, send to background
 videoTracker.onStateUpdate((states) => {
-  console.log(`[広告スキッパー:Twitch] Video states: ${states.length} elements`);
   const msg: ExtVideoStateUpdate = {
     source: MESSAGE_SOURCE.EXTENSION,
     type: 'video-state-update',

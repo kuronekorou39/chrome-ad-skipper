@@ -10,7 +10,7 @@
     "bump:minor": "npm version minor --no-git-tag-version"
   },
   "dependencies": {
-    "@twitch-swap/shared": "*"
+    "@ad-skipper/shared": "*"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.268",

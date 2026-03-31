@@ -1,4 +1,4 @@
-import { MESSAGE_SOURCE } from '@twitch-swap/shared';
+import { MESSAGE_SOURCE } from '@ad-skipper/shared';
 import { isAdBreakActive } from './ad-detection';
 import { showSkipOverlay, hideSkipOverlay } from './skip-overlay';
 
@@ -144,6 +144,5 @@ export class LiveAdHandler {
     if (this.eventLog.length > MAX_LOG_ENTRIES) {
       this.eventLog.shift();
     }
-    console.log(`[LiveAdHandler] ${msg}`);
   }
 }

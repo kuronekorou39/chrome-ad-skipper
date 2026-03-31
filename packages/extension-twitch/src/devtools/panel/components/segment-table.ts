@@ -1,4 +1,4 @@
-import type { HlsPlaylist } from '@twitch-swap/shared';
+import type { HlsPlaylist } from '@ad-skipper/shared';
 
 /**
  * Table showing segments from the latest playlist, with ad segments highlighted.

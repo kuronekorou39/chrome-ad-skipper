@@ -1,5 +1,5 @@
-import type { HlsPlaylist } from '@twitch-swap/shared';
-import { AD_TAGS } from '@twitch-swap/shared';
+import type { HlsPlaylist } from '@ad-skipper/shared';
+import { AD_TAGS } from '@ad-skipper/shared';
 
 /**
  * Displays the raw playlist with ad-related tags highlighted.

@@ -1,4 +1,4 @@
-import type { NetworkLogEntry } from '@twitch-swap/shared';
+import type { NetworkLogEntry } from '@ad-skipper/shared';
 
 /**
  * Table showing all captured HLS network requests.

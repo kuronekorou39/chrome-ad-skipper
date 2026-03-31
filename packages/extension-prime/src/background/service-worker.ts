@@ -1,5 +1,3 @@
-console.log('[Prime Video広告スキッパー] Service Worker started');
-
 chrome.runtime.onMessage.addListener((message, sender) => {
   const tabId = sender.tab?.id ?? -1;
   if (message.type === 'badge-update' && tabId >= 0) {

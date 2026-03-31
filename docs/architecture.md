@@ -4,13 +4,22 @@
 
 ```
 packages/
-├── extension/               Chrome 拡張機能本体
+├── extension-twitch/        Twitch 用 Chrome 拡張機能
 │   ├── src/
 │   │   ├── background/      Service Worker (webRequest ログ等)
 │   │   ├── content/         コンテンツスクリプト (後述)
-│   │   ├── page/            MAIN world スクリプト (Twitch)
+│   │   ├── page/            MAIN world スクリプト
 │   │   ├── popup/           ポップアップ UI
 │   │   ├── devtools/        DevTools パネル (HLS 解析用)
+│   │   └── icons/           拡張機能アイコン
+│   ├── dist/                ビルド出力 (← Chrome に読み込むフォルダ)
+│   ├── manifest.json
+│   └── webpack.config.js
+├── extension-prime/         Prime Video 用 Chrome 拡張機能
+│   ├── src/
+│   │   ├── background/      Service Worker
+│   │   ├── content/         コンテンツスクリプト
+│   │   ├── popup/           ポップアップ UI
 │   │   └── icons/           拡張機能アイコン
 │   ├── dist/                ビルド出力 (← Chrome に読み込むフォルダ)
 │   ├── manifest.json
@@ -23,20 +32,31 @@ tools/
 
 ## コンテンツスクリプト構成
 
-サイトごとにエントリポイントを分離。共通モジュールは共有。
+サイトごとに拡張を分離。各拡張は独立してビルド・リリース可能。
+
+### Twitch 拡張 (`extension-twitch/src/content/`)
 
 ```
-src/content/
-├── content-script.ts           Twitch 用エントリポイント
-├── prime-content-script.ts     Prime Video 用エントリポイント
-├── stream-swapper.ts           Twitch ライブ広告スワップ
-├── vod-ad-handler.ts           Twitch VOD 広告スキップ (16x)
-├── chat-keeper.ts              チャット折り畳み時も PbyP を維持
-├── points-claimer.ts           チャンネルポイント自動取得
-├── prime-ad-handler.ts         Prime Video 広告スキップ (16x)
-├── dom-observer.ts             video 要素の DOM 監視 (共通)
-├── video-tracker.ts            video 状態ポーリング (共通)
-└── bridge.ts                   MAIN ↔ ISOLATED world 通信 (共通)
+content/
+├── content-script.ts       エントリポイント
+├── stream-swapper.ts       ライブ広告スワップ
+├── vod-ad-handler.ts       VOD 広告スキップ (16x)
+├── live-ad-handler.ts      ライブ広告ミュート + 倍速
+├── chat-keeper.ts          チャット折り畳み時も PbyP を維持
+├── points-claimer.ts       チャンネルポイント自動取得
+├── dom-observer.ts         video 要素の DOM 監視
+├── video-tracker.ts        video 状態ポーリング
+├── bridge.ts               MAIN ↔ ISOLATED world 通信
+└── skip-overlay.ts         広告スキップ中オーバーレイ
+```
+
+### Prime Video 拡張 (`extension-prime/src/content/`)
+
+```
+content/
+├── content-script.ts       エントリポイント
+├── prime-ad-handler.ts     広告スキップ (16x)
+└── skip-overlay.ts         広告スキップ中オーバーレイ
 ```
 
 ## サイト別の広告検出方式

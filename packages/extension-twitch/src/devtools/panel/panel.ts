@@ -4,7 +4,7 @@ import type {
   VideoElementState,
   MediaSourceEvent,
   ExtensionMessage,
-} from '@twitch-swap/shared';
+} from '@ad-skipper/shared';
 import { Timeline } from './components/timeline';
 import { SegmentTable } from './components/segment-table';
 import { PlaylistViewer } from './components/playlist-viewer';
@@ -70,7 +70,6 @@ statusEl.textContent = 'Connected';
 statusEl.classList.add('connected');
 
 port.onMessage.addListener((message: ExtensionMessage | { type: string; data: unknown }) => {
-  console.log('[Panel] Received:', message.type);
   switch (message.type) {
     case 'devtools-data': {
       // Initial data load

@@ -4,8 +4,8 @@
  * making the skip feel like a brief dark transition.
  *
  * Two modes:
- *  - Fullscreen (Prime Video): covers the entire viewport.
- *  - Targeted (Twitch): covers only the video player element.
+ *  - Fullscreen: covers the entire viewport.
+ *  - Targeted: covers only a specific element (e.g. video player).
  */
 
 const OVERLAY_ID = 'ad-skipper-overlay';

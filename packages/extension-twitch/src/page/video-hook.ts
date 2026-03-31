@@ -1,4 +1,4 @@
-import { MESSAGE_SOURCE } from '@twitch-swap/shared';
+import { MESSAGE_SOURCE } from '@ad-skipper/shared';
 
 /** Whether a stream swap is currently active */
 let swapActive = false;
@@ -55,7 +55,6 @@ export function setupVideoHook(): void {
   // Listen for swap activate/deactivate from content script
   window.addEventListener('message', handleSwapMessage);
 
-  console.log('[VideoHook] Installed');
 }
 
 function handleSwapMessage(event: MessageEvent): void {
@@ -81,8 +80,6 @@ function activateSwapOverrides(subVideoIndex?: number): void {
     : 1;
   swapTargetVideo = videos[idx];
   swapActive = true;
-
-  console.log('[VideoHook] Swap overrides activated');
 
   // Override muted setter: block Twitch from re-muting the sub-stream
   if (originalMutedDescriptor?.set) {
@@ -124,8 +121,6 @@ function activateSwapOverrides(subVideoIndex?: number): void {
 function deactivateSwapOverrides(): void {
   swapActive = false;
   swapTargetVideo = null;
-
-  console.log('[VideoHook] Swap overrides deactivated');
 
   // Restore original muted descriptor
   if (originalMutedDescriptor) {
