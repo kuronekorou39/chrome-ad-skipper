@@ -18,9 +18,12 @@
     "bump:twitch:patch": "npm version patch --no-git-tag-version -w packages/extension-twitch",
     "bump:twitch:minor": "npm version minor --no-git-tag-version -w packages/extension-twitch",
     "bump:prime:patch": "npm version patch --no-git-tag-version -w packages/extension-prime",
-    "bump:prime:minor": "npm version minor --no-git-tag-version -w packages/extension-prime"
+    "bump:prime:minor": "npm version minor --no-git-tag-version -w packages/extension-prime",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^2.1.9"
   }
 }
