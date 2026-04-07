@@ -1,5 +1,5 @@
 /**
- * Premium icon generator for Twitch & Prime Video ad skipper extensions.
+ * Premium icon generator for Twitch, Prime Video & YouTube ad skipper extensions.
  * Renders gradient backgrounds, symbol glow, drop shadows, and glass overlay.
  * Anti-aliased via 4× supersampling. Pure Node.js — no external dependencies.
  */
@@ -23,6 +23,13 @@ const PLATFORMS = {
     glow: [56, 189, 248],                             // #38BDF8
     symA: [255, 255, 255],  symB: [186, 230, 253],   // #FFF → #BAE6FD
     shad: [12, 30, 51],                               // shadow tint
+  },
+  youtube: {
+    dir: path.join(__dirname, '..', 'packages', 'extension-youtube', 'src', 'icons'),
+    bgA: [239, 68, 68],    bgB: [127, 29, 29],       // #EF4444 → #7F1D1D
+    glow: [252, 165, 165],                            // #FCA5A5
+    symA: [255, 255, 255],  symB: [254, 202, 202],   // #FFF → #FECACA
+    shad: [59, 0, 0],                                 // shadow tint
   },
 };
 
@@ -309,6 +316,20 @@ function render(key, size) {
         if ((inOuter && !inHole) || inStem)
           canvas.over(x, y, 255, 255, 255, 51);
       }
+  }
+
+  // 3d. YouTube play button behind symbol
+  if (key === 'youtube') {
+    // Rounded rectangle (play button background)
+    drawRR(canvas, Math.round(82 * sc), Math.round(12 * sc),
+      Math.round(34 * sc), Math.round(24 * sc), Math.round(6 * sc),
+      () => [255, 255, 255, 38]);   // ~15%
+    // Play triangle inside
+    const tx1 = 94 * sc, ty1 = 17 * sc;
+    const tx2 = 94 * sc, ty2 = 33 * sc;
+    const tx3 = 107 * sc, ty3 = 25 * sc;
+    drawTri(canvas, tx1, ty1, tx2, ty2, tx3, ty3, 0,
+      () => [255, 255, 255, 51]);   // ~20%
   }
 
   // 4. Symbol aura glow

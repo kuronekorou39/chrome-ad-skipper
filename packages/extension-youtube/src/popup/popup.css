@@ -1,0 +1,278 @@
+body {
+  font-family: monospace;
+  font-size: 12px;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  margin: 0;
+  padding: 0;
+  width: 340px;
+}
+
+#popup {
+  padding: 12px;
+}
+
+h1 {
+  font-size: 14px;
+  color: #e74c3c;
+  margin: 0 0 10px;
+}
+
+/* ── Tab bar ── */
+
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #2a2a4a;
+  padding-bottom: 6px;
+}
+
+.tab-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px 4px 0 0;
+  color: #888;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: monospace;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab-btn:hover {
+  color: #bbb;
+}
+
+.tab-btn.active {
+  color: #e0e0e0;
+  border-color: #e74c3c;
+  border-bottom-color: #1a1a2e;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ── Status tab ── */
+
+#connection {
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.dot--green { background: #2ecc71; }
+.dot--yellow { background: #f1c40f; }
+.dot--red { background: #e74c3c; }
+.dot--blue { background: #3498db; }
+
+#status-panel {
+  background: #16213e;
+  border-radius: 4px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+
+#status-panel:empty {
+  display: none;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.status-row:last-child {
+  margin-bottom: 0;
+}
+
+.label {
+  color: #888;
+}
+
+.val--idle { color: #888; }
+.val--ad { color: #f39c12; font-weight: bold; }
+
+.toggle-btn {
+  background: #2a2a4a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #e0e0e0;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: monospace;
+  margin-top: 6px;
+}
+
+.toggle-btn:hover {
+  background: #3a3a5a;
+}
+
+.toggle-btn.on {
+  background: #2e7d32;
+  border-color: #4caf50;
+}
+
+.toggle-btn.off {
+  background: #b71c1c;
+  border-color: #f44336;
+}
+
+/* ── Log tab ── */
+
+#tab-log {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+#log {
+  font-size: 10px;
+  color: #999;
+}
+
+#log:empty::before {
+  content: 'ログなし';
+  color: #555;
+}
+
+.log-entry {
+  padding: 2px 0;
+  line-height: 1.4;
+  border-bottom: 1px solid #1e1e3a;
+  word-break: break-all;
+}
+
+.log-entry .log-time {
+  color: #666;
+}
+
+.log-entry .log-tag {
+  font-weight: bold;
+  margin-right: 2px;
+}
+
+.log-tag--yt { color: #e74c3c; }
+
+/* ── Settings tab ── */
+
+.settings-section {
+  margin-bottom: 12px;
+}
+
+.settings-section-title {
+  font-size: 11px;
+  color: #e74c3c;
+  margin-bottom: 6px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-size: 11px;
+}
+
+.setting-label {
+  color: #ccc;
+}
+
+/* ── Toggle switch ── */
+
+.toggle-switch {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggle-switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #444;
+  border-radius: 20px;
+  transition: background 0.2s;
+}
+
+.toggle-switch .slider::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.toggle-switch input:checked + .slider {
+  background: #2e7d32;
+}
+
+.toggle-switch input:checked + .slider::before {
+  transform: translateX(16px);
+}
+
+/* ── Opacity slider ── */
+
+.opacity-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 180px;
+}
+
+.opacity-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: #444;
+  outline: none;
+  cursor: pointer;
+}
+
+.opacity-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #e74c3c;
+  cursor: pointer;
+}
+
+.opacity-value {
+  font-size: 10px;
+  color: #aaa;
+  min-width: 30px;
+  text-align: right;
+}

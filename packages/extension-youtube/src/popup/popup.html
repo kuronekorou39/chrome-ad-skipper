@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="popup">
+    <h1>YouTube広告スキッパー</h1>
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="status">ステータス</button>
+      <button class="tab-btn" data-tab="log">ログ</button>
+      <button class="tab-btn" data-tab="settings">設定</button>
+    </div>
+    <div id="tab-status">
+      <div id="connection"></div>
+      <div id="status-panel"></div>
+    </div>
+    <div id="tab-log" class="hidden">
+      <div id="log"></div>
+    </div>
+    <div id="tab-settings" class="hidden"></div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

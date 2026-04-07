@@ -7,6 +7,7 @@ dist/
 packages/shared/dist/
 packages/extension-twitch/dist/
 packages/extension-prime/dist/
+packages/extension-youtube/dist/
 packages/segment-analyzer/dist/
 
 # IDE

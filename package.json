@@ -6,6 +6,7 @@
     "packages/shared",
     "packages/extension-twitch",
     "packages/extension-prime",
+    "packages/extension-youtube",
     "packages/segment-analyzer"
   ],
   "scripts": {
@@ -13,12 +14,15 @@
     "build:shared": "npm run build -w packages/shared",
     "build:twitch": "npm run build -w packages/extension-twitch",
     "build:prime": "npm run build -w packages/extension-prime",
+    "build:youtube": "npm run build -w packages/extension-youtube",
     "build:analyzer": "npm run build -w packages/segment-analyzer",
     "clean": "npm run clean --workspaces",
     "bump:twitch:patch": "npm version patch --no-git-tag-version -w packages/extension-twitch",
     "bump:twitch:minor": "npm version minor --no-git-tag-version -w packages/extension-twitch",
     "bump:prime:patch": "npm version patch --no-git-tag-version -w packages/extension-prime",
     "bump:prime:minor": "npm version minor --no-git-tag-version -w packages/extension-prime",
+    "bump:youtube:patch": "npm version patch --no-git-tag-version -w packages/extension-youtube",
+    "bump:youtube:minor": "npm version minor --no-git-tag-version -w packages/extension-youtube",
     "test": "vitest run",
     "test:watch": "vitest"
   },
