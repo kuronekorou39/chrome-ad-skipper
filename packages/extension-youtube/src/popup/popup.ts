@@ -160,7 +160,6 @@ function renderYouTubeStatus(data: {
   connected: boolean;
   youtube: {
     adSkipCount: number;
-    adSpeedUpCount: number;
     isAdPlaying: boolean;
     autoSkipEnabled: boolean;
     eventLog: string[];
@@ -170,7 +169,7 @@ function renderYouTubeStatus(data: {
   const dotClass = youtube.isAdPlaying ? 'dot--yellow' : 'dot--green';
   connectionEl.innerHTML = `<span class="dot ${dotClass}"></span>YouTube`;
 
-  const stateLabel = youtube.isAdPlaying ? '広告スキップ中' : '監視中';
+  const stateLabel = youtube.isAdPlaying ? '広告スキップ待ち' : '監視中';
   const stateClass = youtube.isAdPlaying ? 'val--ad' : 'val--idle';
 
   statusPanel.innerHTML = `
@@ -179,12 +178,8 @@ function renderYouTubeStatus(data: {
       <span class="${stateClass}">${stateLabel}</span>
     </div>
     <div class="status-row">
-      <span class="label">スキップ (ボタン)</span>
+      <span class="label">スキップ回数</span>
       <span>${youtube.adSkipCount}</span>
-    </div>
-    <div class="status-row">
-      <span class="label">スキップ (倍速)</span>
-      <span>${youtube.adSpeedUpCount}</span>
     </div>
     <div class="status-row">
       <span class="label">自動スキップ</span>

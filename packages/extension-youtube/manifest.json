@@ -18,6 +18,12 @@
       "matches": ["*://*.youtube.com/*"],
       "js": ["content/content-script.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["page/page-script.js"],
+      "run_at": "document_idle",
+      "world": "MAIN"
     }
   ],
   "icons": {

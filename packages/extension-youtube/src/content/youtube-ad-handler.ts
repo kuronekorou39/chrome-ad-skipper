@@ -1,25 +1,14 @@
 import { showSkipOverlay, hideSkipOverlay, updateSkipOverlayTimer } from './skip-overlay';
 
-/** Selectors for the skip button (YouTube changes these periodically) */
-const SKIP_SELECTORS = [
-  'button.ytp-ad-skip-button-modern',
-  '.ytp-ad-skip-button',
-  '.ytp-skip-ad-button',
-];
-
-/** The player element that gets .ad-showing during ads */
 const PLAYER_SELECTOR = '#movie_player';
+const PREVIEW_SELECTOR = '.ytp-ad-preview-text-modern, .ytp-ad-text, .ytp-ad-preview-container';
 
-/** Non-skippable ad indicator */
-const PREVIEW_SELECTOR = '.ytp-ad-preview-text-modern, .ytp-ad-text';
-
-const POLL_INTERVAL = 200;
-const AD_PLAYBACK_RATE = 16;
-const MAX_LOG_ENTRIES = 30;
+const POLL_INTERVAL = 300;
+const SKIP_RETRY_INTERVAL = 1500;
+const MAX_LOG_ENTRIES = 50;
 
 export interface YouTubeAdStatus {
   adSkipCount: number;
-  adSpeedUpCount: number;
   isAdPlaying: boolean;
   autoSkipEnabled: boolean;
   eventLog: string[];
@@ -32,14 +21,12 @@ export class YouTubeAdHandler {
   private observer: MutationObserver | null = null;
   private pollId: ReturnType<typeof setInterval> | null = null;
   private adSkipCount = 0;
-  private adSpeedUpCount = 0;
   private isAdPlaying = false;
   private autoSkipEnabled = true;
   private eventLog: string[] = [];
-  private savedPlaybackRate = 1;
-  private savedMuted = false;
-  private savedVolume = 1;
   private stateCallbacks: StateChangeCallback[] = [];
+  private lastSkipAttempt = 0;
+  private apiDumped = false;
 
   onStateChange(cb: StateChangeCallback): void {
     this.stateCallbacks.push(cb);
@@ -52,7 +39,6 @@ export class YouTubeAdHandler {
   getStatus(): YouTubeAdStatus {
     return {
       adSkipCount: this.adSkipCount,
-      adSpeedUpCount: this.adSpeedUpCount,
       isAdPlaying: this.isAdPlaying,
       autoSkipEnabled: this.autoSkipEnabled,
       eventLog: [...this.eventLog],
@@ -70,6 +56,15 @@ export class YouTubeAdHandler {
   start(): void {
     if (this.observer || this.pollId) return;
 
+    // Listen for results from the MAIN world page script
+    window.addEventListener('message', (event) => {
+      if (event.source !== window) return;
+      if (event.data?.source !== 'yt-ad-skipper-page') return;
+      if (event.data.type === 'skip-result') {
+        this.log(`[PAGE] ${event.data.method}: ${event.data.detail}`);
+      }
+    });
+
     chrome.storage.local.get(['ytAutoSkip'], (data) => {
       if (data.ytAutoSkip !== undefined) {
         this.autoSkipEnabled = data.ytAutoSkip;
@@ -78,10 +73,8 @@ export class YouTubeAdHandler {
       this.emitState(this.autoSkipEnabled ? 'on' : 'off');
     });
 
-    // Watch for the player element and observe class changes
     this.setupObserver();
 
-    // Fallback polling in case MutationObserver misses something
     this.pollId = setInterval(() => {
       try {
         this.check();
@@ -106,11 +99,9 @@ export class YouTubeAdHandler {
     const trySetup = (): void => {
       const player = document.querySelector(PLAYER_SELECTOR);
       if (!player) {
-        // YouTube SPA: player may not exist yet, retry
         setTimeout(trySetup, 1000);
         return;
       }
-
       this.observer = new MutationObserver(() => {
         try { this.check(); } catch { /* handled by poll */ }
       });
@@ -126,93 +117,43 @@ export class YouTubeAdHandler {
     const adShowing = player.classList.contains('ad-showing');
 
     if (adShowing && this.autoSkipEnabled) {
-      this.handleAdPlaying();
-    } else if (this.isAdPlaying && !adShowing) {
-      this.handleAdEnded();
-    }
-  }
-
-  private handleAdPlaying(): void {
-    // First: always try to click the skip button
-    if (this.tryClickSkip()) {
       if (!this.isAdPlaying) {
-        this.adSkipCount++;
-        this.log(`Ad #${this.adSkipCount + this.adSpeedUpCount} — skip button clicked`);
+        this.isAdPlaying = true;
+        this.lastSkipAttempt = 0;
+        this.log('Ad detected');
+        this.emitState('ad');
+        showSkipOverlay();
+
+        // Dump player API once to see what methods are available
+        if (!this.apiDumped) {
+          this.apiDumped = true;
+          window.postMessage({ source: 'yt-ad-skipper', type: 'dump-player-api' }, '*');
+        }
       }
-      // Don't set isAdPlaying — the ad should end immediately after clicking skip
-      return;
-    }
 
-    // No skip button available — speed up
-    const video = this.findAdVideo();
-    if (!video) return;
-
-    if (!this.isAdPlaying) {
-      // Entering ad state for the first time
-      this.isAdPlaying = true;
-      this.adSpeedUpCount++;
-
-      // Save current state
-      this.savedPlaybackRate = video.playbackRate;
-      this.savedMuted = video.muted;
-      this.savedVolume = video.volume;
-
-      this.log(`Ad #${this.adSkipCount + this.adSpeedUpCount} — applying ${AD_PLAYBACK_RATE}x + mute`);
-      this.emitState('ad');
-      showSkipOverlay();
-    }
-
-    // Apply speed up + mute
-    if (video.playbackRate !== AD_PLAYBACK_RATE) {
-      video.playbackRate = AD_PLAYBACK_RATE;
-    }
-    if (!video.muted) video.muted = true;
-
-    // Update timer text on overlay
-    const timerText = this.getAdTimerText();
-    updateSkipOverlayTimer(timerText ? `広告 ${timerText}` : '');
-
-    // Keep trying to click skip in case it appears mid-ad
-    this.tryClickSkip();
-  }
-
-  private handleAdEnded(): void {
-    this.isAdPlaying = false;
-    this.log(`Ad #${this.adSkipCount + this.adSpeedUpCount} finished — restoring`);
-    this.emitState('on');
-
-    // Restore video state
-    const video = document.querySelector<HTMLVideoElement>('video');
-    if (video) {
-      video.playbackRate = this.savedPlaybackRate;
-      video.muted = this.savedMuted;
-      video.volume = this.savedVolume;
-    }
-
-    hideSkipOverlay();
-  }
-
-  private tryClickSkip(): boolean {
-    for (const selector of SKIP_SELECTORS) {
-      const btn = document.querySelector<HTMLElement>(selector);
-      if (btn && btn.offsetParent !== null) {
-        btn.click();
-        return true;
+      // Retry skip every SKIP_RETRY_INTERVAL
+      const now = Date.now();
+      if (now - this.lastSkipAttempt > SKIP_RETRY_INTERVAL) {
+        this.lastSkipAttempt = now;
+        this.log('Attempting skip via page script...');
+        window.postMessage({ source: 'yt-ad-skipper', type: 'skip-ad' }, '*');
       }
-    }
-    return false;
-  }
 
-  private findAdVideo(): HTMLVideoElement | null {
-    const video = document.querySelector<HTMLVideoElement>('video.html5-main-video');
-    if (video && !video.paused) return video;
+      const timerText = this.getAdTimerText();
+      updateSkipOverlayTimer(timerText ? `広告 ${timerText}` : '');
 
-    // Fallback: first non-paused video
-    const videos = Array.from(document.querySelectorAll<HTMLVideoElement>('video'));
-    for (let i = 0; i < videos.length; i++) {
-      if (!videos[i].paused && videos[i].videoWidth > 0) return videos[i];
+    } else if (this.isAdPlaying && !adShowing) {
+      this.adSkipCount++;
+      this.log(`Ad ended (#${this.adSkipCount})`);
+      this.isAdPlaying = false;
+      this.emitState('on');
+      hideSkipOverlay();
+
+      // Ad ended — resume playback (video may be stuck paused after seek-skip)
+      setTimeout(() => {
+        window.postMessage({ source: 'yt-ad-skipper', type: 'resume-playback' }, '*');
+      }, 300);
     }
-    return null;
   }
 
   private getAdTimerText(): string {

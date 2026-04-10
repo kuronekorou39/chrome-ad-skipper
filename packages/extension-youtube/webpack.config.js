@@ -7,6 +7,7 @@ module.exports = {
   entry: {
     'background/service-worker': './src/background/service-worker.ts',
     'content/content-script': './src/content/content-script.ts',
+    'page/page-script': './src/page/page-script.ts',
     'popup/popup': './src/popup/popup.ts',
   },
   output: {
