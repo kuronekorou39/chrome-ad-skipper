@@ -41,4 +41,4 @@ Chrome で `chrome://extensions` → デベロッパーモード → `packages/e
 
 ## 注意
 
-> YouTube は広告ブロックへの対策を頻繁に更新するため、スキップボタンのセレクタやプレイヤーの挙動が変更される可能性があります。動作しない場合は [Issue](../../issues) を報告してください。
+> YouTube は広告ブロックへの対策を頻繁に更新するため、スキップボタンのセレクタやプレイヤーの挙動が変更される可能性があります。動作しない場合は [Issue](https://github.com/kuronekorou39/chrome-ad-skipper/issues) を報告してください。
