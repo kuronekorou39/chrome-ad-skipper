@@ -1,46 +1,37 @@
 # 広告スキッパー
 
-Twitch / Prime Video 用の広告スキップ Chrome 拡張機能。
+動画サイトの広告を自動スキップする Chrome 拡張機能集。
 
-## インストール
+## 拡張機能
+
+| 拡張 | 対象サイト | 概要 |
+|------|-----------|------|
+| [Twitch広告スキッパー](packages/extension-twitch/) | Twitch | 広告スワップ・倍速スキップ・ポイント自動取得 |
+| [Prime Video広告スキッパー](packages/extension-prime/) | Prime Video | 広告を倍速+ミュートで早送り |
+| [YouTube広告スキッパー](packages/extension-youtube/) | YouTube | スキップボタン自動クリック |
+
+各拡張は独立してビルド・インストール可能です。
+
+## クイックスタート
 
 ```bash
 npm install
-npm run build
+npm run build        # 全拡張をビルド
+npm test             # ユニットテスト
 ```
 
-Chrome で `chrome://extensions` を開き、「デベロッパーモード」を有効にして
-以下のフォルダを「パッケージ化されていない拡張機能を読み込む」で読み込む。
-
-- **Twitch 用**: `packages/extension-twitch/dist`
-- **Prime Video 用**: `packages/extension-prime/dist`
-
-## 機能
-
-| サイト | 機能 | 仕組み |
-|--------|------|--------|
-| Twitch (ライブ) | 広告スワップ | 広告中に本編サブストリームをメイン表示に差し替え |
-| Twitch (VOD) | 広告スキップ | 広告動画を 16x 倍速 + ミュート |
-| Twitch | ポイント自動取得 | チャンネルポイントボタンを自動クリック |
-| Prime Video | 広告スキップ | 広告を 16x 倍速 + ミュート、終了後に復元 |
-
-## 使い方
-
-拡張機能のポップアップアイコンをクリックするとステータスが表示される。
-
-- **Twitch**: 自動で動作。スワップ回数・ポイント取得数を表示。
-- **Prime Video**: 自動で動作。ON/OFF トグルあり。スキップ回数を表示。
+Chrome で `chrome://extensions` →「デベロッパーモード」→「パッケージ化されていない拡張機能を読み込む」で各拡張の `dist` フォルダを指定。
 
 ## 開発
 
 ```bash
-npm run build:twitch    # Twitch 拡張のみビルド
-npm run build:prime     # Prime Video 拡張のみビルド
-npm run dev -w packages/extension-twitch   # Twitch ウォッチモード
-npm run dev -w packages/extension-prime    # Prime Video ウォッチモード
+npm run build:twitch    # 個別ビルド
+npm run build:prime
+npm run build:youtube
+npm run dev -w packages/extension-twitch   # ウォッチモード
 ```
 
-詳細は [docs/](docs/) を参照。
+詳細は [docs/architecture.md](docs/architecture.md) を参照。
 
 ## ライセンス
 

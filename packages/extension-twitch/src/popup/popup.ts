@@ -1,6 +1,8 @@
 const connectionEl = document.getElementById('connection')!;
 const statusPanel = document.getElementById('status-panel')!;
 const logEl = document.getElementById('log')!;
+const logCopyBtn = document.getElementById('log-copy')!;
+const versionEl = document.getElementById('version')!;
 const tabStatus = document.getElementById('tab-status')!;
 const tabLog = document.getElementById('tab-log')!;
 const tabSettings = document.getElementById('tab-settings')!;
@@ -10,6 +12,10 @@ const TAB_ELEMENTS: Record<string, HTMLElement> = {
   log: tabLog,
   settings: tabSettings,
 };
+
+// Show extension version
+const manifest = chrome.runtime.getManifest();
+versionEl.textContent = `v${manifest.version}`;
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -63,33 +69,45 @@ function renderSettingsTab(): void {
     const data: SettingsData = { ...DEFAULTS, ...raw };
     tabSettings.innerHTML = '';
 
-    // Twitch section
-    const twitchSection = createSection('Twitch');
-    twitchSection.appendChild(createToggleRow('広告スワップ (ライブ)', data.streamSwapEnabled, (v) => {
-      chrome.storage.local.set({ streamSwapEnabled: v });
-    }));
-    twitchSection.appendChild(createToggleRow('VOD広告スキップ', data.vodAdSkipEnabled, (v) => {
-      chrome.storage.local.set({ vodAdSkipEnabled: v });
-    }));
-    twitchSection.appendChild(createToggleRow('ポイント自動取得', data.autoPointsEnabled, (v) => {
-      chrome.storage.local.set({ autoPointsEnabled: v });
-    }));
-    twitchSection.appendChild(createToggleRow('チャット維持', data.chatKeeperEnabled, (v) => {
-      chrome.storage.local.set({ chatKeeperEnabled: v });
-    }));
-    twitchSection.appendChild(createToggleRow('ライブ広告ミュート', data.liveAdMuteEnabled, (v) => {
-      chrome.storage.local.set({ liveAdMuteEnabled: v });
-    }));
-    twitchSection.appendChild(createSliderRow('広告早送り速度', data.adPlaybackRate, (v) => {
-      chrome.storage.local.set({ adPlaybackRate: v });
-    }, { min: 2, max: 16, step: 2, unit: 'x' }));
-    tabSettings.appendChild(twitchSection);
+    // Ad handling section
+    const adSection = createSection('広告対策');
+    adSection.appendChild(createToggleRow(
+      '広告スワップ', '広告中にサブストリームに自動切替',
+      data.streamSwapEnabled, (v) => chrome.storage.local.set({ streamSwapEnabled: v }),
+    ));
+    adSection.appendChild(createToggleRow(
+      'VOD広告スキップ', 'VODの広告を倍速+ミュートで早送り',
+      data.vodAdSkipEnabled, (v) => chrome.storage.local.set({ vodAdSkipEnabled: v }),
+    ));
+    adSection.appendChild(createToggleRow(
+      'ライブ広告ミュート', 'スワップ不可時に広告をミュート+倍速',
+      data.liveAdMuteEnabled, (v) => chrome.storage.local.set({ liveAdMuteEnabled: v }),
+    ));
+    adSection.appendChild(createSliderRow(
+      '広告早送り速度', 'VOD・ライブ広告の再生速度',
+      data.adPlaybackRate, (v) => chrome.storage.local.set({ adPlaybackRate: v }),
+      { min: 2, max: 16, step: 2, unit: 'x' },
+    ));
+    tabSettings.appendChild(adSection);
+
+    // Utility section
+    const utilSection = createSection('ユーティリティ');
+    utilSection.appendChild(createToggleRow(
+      'ポイント自動取得', 'チャンネルポイントボタンを自動クリック',
+      data.autoPointsEnabled, (v) => chrome.storage.local.set({ autoPointsEnabled: v }),
+    ));
+    utilSection.appendChild(createToggleRow(
+      'チャット維持', '折り畳み時もチャットを維持しスワップを有効化',
+      data.chatKeeperEnabled, (v) => chrome.storage.local.set({ chatKeeperEnabled: v }),
+    ));
+    tabSettings.appendChild(utilSection);
 
     // Display section
     const displaySection = createSection('表示');
-    displaySection.appendChild(createSliderRow('オーバーレイ不透明度', data.overlayOpacity, (v) => {
-      chrome.storage.local.set({ overlayOpacity: v });
-    }));
+    displaySection.appendChild(createSliderRow(
+      'オーバーレイ不透明度', '広告スキップ中の暗転の濃さ',
+      data.overlayOpacity, (v) => chrome.storage.local.set({ overlayOpacity: v }),
+    ));
     tabSettings.appendChild(displaySection);
   });
 }
@@ -104,28 +122,33 @@ function createSection(title: string): HTMLDivElement {
   return section;
 }
 
-function createToggleRow(label: string, checked: boolean, onChange: (v: boolean) => void): HTMLDivElement {
+function createToggleRow(label: string, desc: string, checked: boolean, onChange: (v: boolean) => void): HTMLDivElement {
   const row = document.createElement('div');
   row.className = 'setting-row';
 
+  const info = document.createElement('div');
+  info.className = 'setting-info';
   const labelEl = document.createElement('span');
   labelEl.className = 'setting-label';
   labelEl.textContent = label;
+  const descEl = document.createElement('span');
+  descEl.className = 'setting-desc';
+  descEl.textContent = desc;
+  info.appendChild(labelEl);
+  info.appendChild(descEl);
 
   const toggle = document.createElement('label');
   toggle.className = 'toggle-switch';
-
   const input = document.createElement('input');
   input.type = 'checkbox';
   input.checked = checked;
   input.addEventListener('change', () => onChange(input.checked));
-
   const slider = document.createElement('span');
   slider.className = 'slider';
-
   toggle.appendChild(input);
   toggle.appendChild(slider);
-  row.appendChild(labelEl);
+
+  row.appendChild(info);
   row.appendChild(toggle);
   return row;
 }
@@ -137,7 +160,7 @@ interface SliderOptions {
   unit?: string;
 }
 
-function createSliderRow(label: string, value: number, onChange: (v: number) => void, opts?: SliderOptions): HTMLDivElement {
+function createSliderRow(label: string, desc: string, value: number, onChange: (v: number) => void, opts?: SliderOptions): HTMLDivElement {
   const min = opts?.min ?? 0;
   const max = opts?.max ?? 100;
   const step = opts?.step ?? 1;
@@ -146,9 +169,16 @@ function createSliderRow(label: string, value: number, onChange: (v: number) => 
   const row = document.createElement('div');
   row.className = 'setting-row';
 
+  const info = document.createElement('div');
+  info.className = 'setting-info';
   const labelEl = document.createElement('span');
   labelEl.className = 'setting-label';
   labelEl.textContent = label;
+  const descEl = document.createElement('span');
+  descEl.className = 'setting-desc';
+  descEl.textContent = desc;
+  info.appendChild(labelEl);
+  info.appendChild(descEl);
 
   const control = document.createElement('div');
   control.className = 'opacity-control';
@@ -174,7 +204,7 @@ function createSliderRow(label: string, value: number, onChange: (v: number) => 
 
   control.appendChild(slider);
   control.appendChild(valueEl);
-  row.appendChild(labelEl);
+  row.appendChild(info);
   row.appendChild(control);
   return row;
 }
@@ -202,40 +232,37 @@ function renderTwitchStatus(data: {
 }): void {
   const isSwapping = data.swap.state === 'swapping';
   const isLiveAdMuting = data.liveAd?.isAdPlaying ?? false;
+  const isActive = isSwapping || isLiveAdMuting;
 
-  const dotClass = (isSwapping || isLiveAdMuting) ? 'dot--yellow' : 'dot--green';
+  const dotClass = isActive ? 'dot--yellow' : 'dot--green';
   const channel = data.url.match(/twitch\.tv\/(\w+)/)?.[1] ?? data.url;
-  connectionEl.innerHTML = `<span class="dot ${dotClass}"></span>Twitch: ${channel}`;
+  connectionEl.innerHTML = `<span class="dot ${dotClass}"></span>${escapeHtml(channel)}`;
 
   const stateLabel = isSwapping ? '広告スワップ中' : isLiveAdMuting ? '広告ミュート中' : '監視中';
-  const stateClass = (isSwapping || isLiveAdMuting) ? 'val--swap' : 'val--idle';
+  const badgeClass = isActive ? 'status-badge--active' : 'status-badge--idle';
   const pointsClaimed = data.points?.claimCount ?? 0;
   const vodAdsSkipped = data.vodAd?.skippedCount ?? 0;
   const liveAdsMuted = data.liveAd?.skippedCount ?? 0;
+
   statusPanel.innerHTML = `
-    <div class="status-row">
-      <span class="label">ステータス</span>
-      <span class="${stateClass}">${stateLabel}</span>
-    </div>
-    <div class="status-row">
-      <span class="label">ビデオ数</span>
-      <span>${data.swap.videoCount}</span>
-    </div>
-    <div class="status-row">
-      <span class="label">広告スワップ (ライブ)</span>
-      <span>${data.swap.swapCount}</span>
-    </div>
-    <div class="status-row">
-      <span class="label">広告ミュート (ライブ)</span>
-      <span>${liveAdsMuted}</span>
-    </div>
-    <div class="status-row">
-      <span class="label">広告スキップ (VOD)</span>
-      <span>${vodAdsSkipped}</span>
-    </div>
-    <div class="status-row">
-      <span class="label">ポイント取得</span>
-      <span>${pointsClaimed}</span>
+    <div class="status-badge ${badgeClass}">${stateLabel}</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">${data.swap.swapCount}</div>
+        <div class="stat-label">広告スワップ</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${liveAdsMuted}</div>
+        <div class="stat-label">広告ミュート</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${vodAdsSkipped}</div>
+        <div class="stat-label">VODスキップ</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${pointsClaimed}</div>
+        <div class="stat-label">ポイント取得</div>
+      </div>
     </div>
   `;
 
@@ -250,7 +277,12 @@ function renderTwitchStatus(data: {
   renderLogEntries(allLogs);
 }
 
+/** Currently displayed logs — kept for copy */
+let currentLogs: TaggedLog[] = [];
+
 function renderLogEntries(logs: TaggedLog[]): void {
+  currentLogs = logs;
+
   if (logs.length > 0) {
     logEl.innerHTML = logs
       .map(({ tag, cssClass, entry }) => {
@@ -265,6 +297,26 @@ function renderLogEntries(logs: TaggedLog[]): void {
     logEl.textContent = '';
   }
 }
+
+// ── Copy logs ──
+
+logCopyBtn.addEventListener('click', () => {
+  if (currentLogs.length === 0) return;
+
+  const text = currentLogs
+    .map(({ tag, entry }) => `[${tag}] ${entry}`)
+    .join('\n');
+
+  const originalHTML = logCopyBtn.innerHTML;
+  navigator.clipboard.writeText(text).then(() => {
+    logCopyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> OK';
+    logCopyBtn.classList.add('copied');
+    setTimeout(() => {
+      logCopyBtn.innerHTML = originalHTML;
+      logCopyBtn.classList.remove('copied');
+    }, 1500);
+  });
+});
 
 // ── Polling ──
 
