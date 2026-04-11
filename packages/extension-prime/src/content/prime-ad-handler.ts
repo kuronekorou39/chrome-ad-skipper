@@ -1,4 +1,4 @@
-import { showSkipOverlay, hideSkipOverlay, updateSkipOverlayTimer } from '@ad-skipper/shared';
+import { showSkipOverlay, hideSkipOverlay, updateSkipOverlayTimer, parseRemainingSeconds, rateForRemaining } from '@ad-skipper/shared';
 
 const AD_OVERLAY_SELECTOR = '[class*="atvwebplayersdk-ad"]';
 const AD_TIMER_SELECTOR = '.atvwebplayersdk-ad-timer-remaining-time';
@@ -112,7 +112,7 @@ export class PrimeAdHandler {
 
       // Choose speed based on remaining time — slow down near the end
       // to avoid overshooting into content at high speed
-      const targetRate = this.rateForRemaining(remaining);
+      const targetRate = this.getTargetRate(remaining);
 
       if (targetRate <= 1) {
         // Last stretch — restore normal playback and hide overlay early
@@ -149,20 +149,9 @@ export class PrimeAdHandler {
     }
   }
 
-  /** Parse "M:SS" timer text into seconds. Returns Infinity if unparseable. */
-  private parseRemainingSeconds(text: string): number {
-    const m = text.match(/(\d+):(\d{2})/);
-    if (!m) return Infinity;
-    return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
-  }
-
-  /** Ramp down playback rate as the ad nears its end to avoid overshooting into content. */
-  private rateForRemaining(timerText: string): number {
-    const secs = this.parseRemainingSeconds(timerText);
-    if (secs <= 2) return 1;   // last 2s: normal speed, no overshoot
-    if (secs <= 5) return 2;
-    if (secs <= 10) return 4;
-    return AD_PLAYBACK_RATE;
+  /** Calculate playback rate based on remaining ad time. */
+  private getTargetRate(timerText: string): number {
+    return rateForRemaining(parseRemainingSeconds(timerText), AD_PLAYBACK_RATE);
   }
 
   private isAdOverlayVisible(): boolean {

@@ -66,6 +66,12 @@ export {
 
 export type { TaggedLog, SliderOptions } from './ui/popup-utils.js';
 
+// Ad timing utilities
+export {
+  parseRemainingSeconds,
+  rateForRemaining,
+} from './utils/ad-timing.js';
+
 // Constants
 export {
   TWITCH_HLS_DOMAINS,
