@@ -10,10 +10,7 @@ import { findPesHeaders } from './pes-parser';
 
 const program = new Command();
 
-program
-  .name('segment-analyzer')
-  .description('MPEG-TS segment analyzer for Twitch HLS research')
-  .version('0.1.0');
+program.name('segment-analyzer').description('MPEG-TS segment analyzer for Twitch HLS research').version('0.1.0');
 
 program
   .command('analyze')
@@ -49,7 +46,9 @@ program
           console.log(`\n--- PMT (Program Map Table) for Program ${pmt.programNumber} ---`);
           console.log(`PCR PID: ${pmt.pcrPid} (0x${pmt.pcrPid.toString(16)})`);
           for (const stream of pmt.streams) {
-            console.log(`  PID ${stream.elementaryPid} (0x${stream.elementaryPid.toString(16)}): ${stream.streamTypeName}`);
+            console.log(
+              `  PID ${stream.elementaryPid} (0x${stream.elementaryPid.toString(16)}): ${stream.streamTypeName}`,
+            );
           }
 
           // PES headers
@@ -124,10 +123,7 @@ program
     console.log(`File 2: ${path.basename(file2)} (${data2.length} bytes, ${summary2.totalPackets} packets)`);
 
     // Compare PIDs
-    const allPids = new Set([
-      ...Object.keys(summary1.pidCounts),
-      ...Object.keys(summary2.pidCounts),
-    ]);
+    const allPids = new Set([...Object.keys(summary1.pidCounts), ...Object.keys(summary2.pidCounts)]);
 
     console.log(`\n--- PID Comparison ---`);
     console.log(`${'PID'.padEnd(12)} ${'File 1'.padEnd(10)} ${'File 2'.padEnd(10)} Diff`);
@@ -136,7 +132,9 @@ program
       const c2 = summary2.pidCounts[parseInt(pid)] ?? 0;
       const diff = c2 - c1;
       const diffStr = diff > 0 ? `+${diff}` : diff.toString();
-      console.log(`  0x${parseInt(pid).toString(16).padEnd(8)} ${c1.toString().padEnd(10)} ${c2.toString().padEnd(10)} ${diffStr}`);
+      console.log(
+        `  0x${parseInt(pid).toString(16).padEnd(8)} ${c1.toString().padEnd(10)} ${c2.toString().padEnd(10)} ${diffStr}`,
+      );
     }
 
     // Compare timestamps
@@ -188,7 +186,9 @@ program
 
     console.log(`\n=== PTS Timeline ===`);
     console.log(`File: ${path.resolve(file)}`);
-    console.log(`${'#'.padEnd(6)} ${'PID'.padEnd(10)} ${'Type'.padEnd(8)} ${'PTS (s)'.padEnd(16)} ${'DTS (s)'.padEnd(16)} PTS-DTS`);
+    console.log(
+      `${'#'.padEnd(6)} ${'PID'.padEnd(10)} ${'Type'.padEnd(8)} ${'PTS (s)'.padEnd(16)} ${'DTS (s)'.padEnd(16)} PTS-DTS`,
+    );
 
     let prevPts: number | undefined;
 
@@ -196,9 +196,8 @@ program
       const h = pesHeaders[i];
       const pts = h.ptsSeconds?.toFixed(6) ?? '-';
       const dts = h.dtsSeconds?.toFixed(6) ?? '-';
-      const ptsDtsDiff = (h.ptsSeconds != null && h.dtsSeconds != null)
-        ? `${(h.ptsSeconds - h.dtsSeconds).toFixed(6)}s`
-        : '-';
+      const ptsDtsDiff =
+        h.ptsSeconds != null && h.dtsSeconds != null ? `${(h.ptsSeconds - h.dtsSeconds).toFixed(6)}s` : '-';
 
       let delta = '';
       if (h.ptsSeconds != null && prevPts != null) {
@@ -210,11 +209,11 @@ program
 
       console.log(
         `  ${i.toString().padEnd(6)}` +
-        `0x${h.pid.toString(16).padEnd(8)}` +
-        `${streamType.padEnd(8)}` +
-        `${pts.padEnd(16)}` +
-        `${dts.padEnd(16)}` +
-        `${ptsDtsDiff}${delta}`
+          `0x${h.pid.toString(16).padEnd(8)}` +
+          `${streamType.padEnd(8)}` +
+          `${pts.padEnd(16)}` +
+          `${dts.padEnd(16)}` +
+          `${ptsDtsDiff}${delta}`,
       );
     }
 

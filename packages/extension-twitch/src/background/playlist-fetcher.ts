@@ -1,7 +1,4 @@
-import {
-  parseMediaPlaylist,
-  isMasterPlaylist,
-} from '@ad-skipper/shared';
+import { parseMediaPlaylist, isMasterPlaylist } from '@ad-skipper/shared';
 import type { ExtPlaylistUpdate, ExtAdDetected } from '@ad-skipper/shared';
 import { broadcastToDevTools } from './broadcast';
 import { dataStore } from './data-store';
@@ -65,7 +62,6 @@ class PlaylistFetcher {
         dataStore.add(tabId, adMsg);
         broadcastToDevTools(tabId, adMsg);
       }
-
     } catch {
       // Fetch failed — silently ignore
     }

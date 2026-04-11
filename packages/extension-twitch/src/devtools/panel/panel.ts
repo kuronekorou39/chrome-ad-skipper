@@ -73,12 +73,17 @@ port.onMessage.addListener((message: ExtensionMessage | { type: string; data: un
   switch (message.type) {
     case 'devtools-data': {
       // Initial data load
-      const data = (message as { type: string; data: {
-        networkLogs: NetworkLogEntry[];
-        playlists: HlsPlaylist[];
-        videoStates: VideoElementState[];
-        mediaSourceEvents: MediaSourceEvent[];
-      } }).data;
+      const data = (
+        message as {
+          type: string;
+          data: {
+            networkLogs: NetworkLogEntry[];
+            playlists: HlsPlaylist[];
+            videoStates: VideoElementState[];
+            mediaSourceEvents: MediaSourceEvent[];
+          };
+        }
+      ).data;
       networkLogs = data.networkLogs;
       playlists = data.playlists;
       videoStates = data.videoStates;

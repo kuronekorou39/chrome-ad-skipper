@@ -41,7 +41,9 @@ function skipAd(): void {
           (player[method] as () => void)();
           report('api-call', method);
           return;
-        } catch { /* continue */ }
+        } catch {
+          /* continue */
+        }
       }
     }
 
@@ -88,10 +90,13 @@ function resumePlayback(): void {
 }
 
 function report(type: string, detail: string): void {
-  window.postMessage({
-    source: 'yt-ad-skipper-page',
-    type: 'skip-result',
-    method: type,
-    detail,
-  }, '*');
+  window.postMessage(
+    {
+      source: 'yt-ad-skipper-page',
+      type: 'skip-result',
+      method: type,
+      detail,
+    },
+    '*',
+  );
 }

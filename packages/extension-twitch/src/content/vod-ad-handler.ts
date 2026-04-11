@@ -73,9 +73,10 @@ export class VodAdHandler {
         parseFloat(adVideo.src.match(/[&?]d=([\d.]+)/)?.[1] ?? '0');
       this.log(`Ad detected (${duration.toFixed(1)}s) — muting + ${AD_PLAYBACK_RATE}x`);
       // Cover only the video player area, not the full viewport
-      const playerEl = document.querySelector<HTMLElement>('.video-player__container')
-        ?? document.querySelector<HTMLElement>('[data-a-target="video-player"]')
-        ?? adVideo.closest<HTMLElement>('.video-player');
+      const playerEl =
+        document.querySelector<HTMLElement>('.video-player__container') ??
+        document.querySelector<HTMLElement>('[data-a-target="video-player"]') ??
+        adVideo.closest<HTMLElement>('.video-player');
       showSkipOverlay(playerEl ?? undefined);
     }
 

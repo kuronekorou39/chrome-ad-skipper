@@ -62,7 +62,7 @@ export class StreamSwapper {
   }
 
   private notifyStateChange(): void {
-    const state = this.isSwapped ? 'swapping' as const : 'idle' as const;
+    const state = this.isSwapped ? ('swapping' as const) : ('idle' as const);
     for (const cb of this.stateCallbacks) {
       cb(state);
     }
@@ -92,10 +92,7 @@ export class StreamSwapper {
 
   /** Check if a video is a VOD/display ad (not a live sub-stream) */
   private isAdVideo(v: HTMLVideoElement): boolean {
-    return (
-      v.getAttribute('aria-label') === 'Video Advertisement' ||
-      v.closest('[data-a-target="ax-overlay"]') !== null
-    );
+    return v.getAttribute('aria-label') === 'Video Advertisement' || v.closest('[data-a-target="ax-overlay"]') !== null;
   }
 
   /** Dump per-video diagnostics for debugging */
@@ -109,15 +106,15 @@ export class StreamSwapper {
       const parentClass = v.parentElement?.className?.slice(0, 60) ?? '';
       this.log(
         `${label} video[${i}]: ` +
-        `ready=${v.readyState} ` +
-        `size=${v.videoWidth}x${v.videoHeight} ` +
-        `muted=${v.muted} ` +
-        `paused=${v.paused} ` +
-        `aria="${ariaLabel}" ` +
-        `axOverlay=${inAxOverlay} ` +
-        `isAd=${this.isAdVideo(v)} ` +
-        `inDOM=${inDOM} ` +
-        `parent=<${parentTag} class="${parentClass}">`,
+          `ready=${v.readyState} ` +
+          `size=${v.videoWidth}x${v.videoHeight} ` +
+          `muted=${v.muted} ` +
+          `paused=${v.paused} ` +
+          `aria="${ariaLabel}" ` +
+          `axOverlay=${inAxOverlay} ` +
+          `isAd=${this.isAdVideo(v)} ` +
+          `inDOM=${inDOM} ` +
+          `parent=<${parentTag} class="${parentClass}">`,
       );
     }
   }
@@ -217,9 +214,7 @@ export class StreamSwapper {
       if (isAdBreakActive()) {
         this.clearPendingCheck();
         // Re-check which videos are still active
-        const stillActive = activeVideos.filter(
-          (v) => document.contains(v) && this.isActive(v),
-        );
+        const stillActive = activeVideos.filter((v) => document.contains(v) && this.isActive(v));
         if (stillActive.length >= 2) {
           this.log(`Ad indicators appeared after ${(checks * 0.2).toFixed(1)}s — activating swap`);
           this.activateSwap(stillActive);
@@ -230,9 +225,7 @@ export class StreamSwapper {
       }
 
       // Check if the second video disappeared (no longer an ad scenario)
-      const stillActive = activeVideos.filter(
-        (v) => document.contains(v) && this.isActive(v),
-      );
+      const stillActive = activeVideos.filter((v) => document.contains(v) && this.isActive(v));
       if (stillActive.length < 2) {
         this.clearPendingCheck();
         this.log('Second video disappeared while waiting — not an ad');
@@ -278,7 +271,7 @@ export class StreamSwapper {
 
     this.log(
       `Swap ON — ad: ${this.adVideo.videoWidth}x${this.adVideo.videoHeight}, ` +
-      `sub: ${this.subVideo.videoWidth}x${this.subVideo.videoHeight}`,
+        `sub: ${this.subVideo.videoWidth}x${this.subVideo.videoHeight}`,
     );
 
     // Save original volume from the ad video (main player)
@@ -414,10 +407,7 @@ export class StreamSwapper {
     }
 
     // Notify page script FIRST to remove muted/volume overrides
-    window.postMessage(
-      { source: MESSAGE_SOURCE.CONTENT, type: 'swap-deactivate' },
-      '*',
-    );
+    window.postMessage({ source: MESSAGE_SOURCE.CONTENT, type: 'swap-deactivate' }, '*');
 
     const adVideo = this.adVideo;
     const subVideo = this.subVideo;

@@ -94,8 +94,9 @@ export class LiveAdHandler {
 
       this.log(`Ad #${this.skippedCount} detected — mute + ${this.playbackRate}x`);
 
-      const playerEl = document.querySelector<HTMLElement>('.video-player__container')
-        ?? document.querySelector<HTMLElement>('[data-a-target="video-player"]');
+      const playerEl =
+        document.querySelector<HTMLElement>('.video-player__container') ??
+        document.querySelector<HTMLElement>('[data-a-target="video-player"]');
       showSkipOverlay(playerEl ?? undefined);
     } else if (adActive && this.isAdPlaying) {
       // Ad ongoing — keep enforcing mute (speed is locked via MAIN world)

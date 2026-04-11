@@ -89,10 +89,10 @@ function parseTimestamp(data: Buffer, offset: number): number {
   // 33-bit timestamp spread across 5 bytes with marker bits
   const ts =
     ((byte0 >> 1) & 0x07) * 0x100000000 + // bits 32-30
-    (byte1 * 0x02000000) +                  // bits 29-22
-    (byte2 >> 1) * 0x020000 +              // bits 21-15
-    (byte3 * 0x0200) +                      // bits 14-7
-    (byte4 >> 1);                            // bits 6-0
+    byte1 * 0x02000000 + // bits 29-22
+    (byte2 >> 1) * 0x020000 + // bits 21-15
+    byte3 * 0x0200 + // bits 14-7
+    (byte4 >> 1); // bits 6-0
 
   return ts;
 }

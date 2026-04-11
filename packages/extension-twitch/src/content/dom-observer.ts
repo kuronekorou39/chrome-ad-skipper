@@ -26,7 +26,6 @@ export class DomObserver {
       childList: true,
       subtree: true,
     });
-
   }
 
   stop(): void {

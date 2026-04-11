@@ -23,7 +23,9 @@ setupTabSwitching(
     log: document.getElementById('tab-log')!,
     settings: tabSettings,
   },
-  (tab) => { if (tab === 'settings') renderSettingsTab(); },
+  (tab) => {
+    if (tab === 'settings') renderSettingsTab();
+  },
 );
 
 let currentLogs: TaggedLog[] = [];
@@ -63,41 +65,51 @@ function renderSettingsTab(): void {
     tabSettings.innerHTML = '';
 
     const adSection = createSection('広告対策');
-    adSection.appendChild(createToggleRow(
-      '広告スワップ', '広告中にサブストリームに自動切替',
-      data.streamSwapEnabled, (v) => chrome.storage.local.set({ streamSwapEnabled: v }),
-    ));
-    adSection.appendChild(createToggleRow(
-      'VOD広告スキップ', 'VODの広告を倍速+ミュートで早送り',
-      data.vodAdSkipEnabled, (v) => chrome.storage.local.set({ vodAdSkipEnabled: v }),
-    ));
-    adSection.appendChild(createToggleRow(
-      'ライブ広告ミュート', 'スワップ不可時に広告をミュート+倍速',
-      data.liveAdMuteEnabled, (v) => chrome.storage.local.set({ liveAdMuteEnabled: v }),
-    ));
-    adSection.appendChild(createSliderRow(
-      '広告早送り速度', 'VOD・ライブ広告の再生速度',
-      data.adPlaybackRate, (v) => chrome.storage.local.set({ adPlaybackRate: v }),
-      { min: 2, max: 16, step: 2, unit: 'x' },
-    ));
+    adSection.appendChild(
+      createToggleRow('広告スワップ', '広告中にサブストリームに自動切替', data.streamSwapEnabled, (v) =>
+        chrome.storage.local.set({ streamSwapEnabled: v }),
+      ),
+    );
+    adSection.appendChild(
+      createToggleRow('VOD広告スキップ', 'VODの広告を倍速+ミュートで早送り', data.vodAdSkipEnabled, (v) =>
+        chrome.storage.local.set({ vodAdSkipEnabled: v }),
+      ),
+    );
+    adSection.appendChild(
+      createToggleRow('ライブ広告ミュート', 'スワップ不可時に広告をミュート+倍速', data.liveAdMuteEnabled, (v) =>
+        chrome.storage.local.set({ liveAdMuteEnabled: v }),
+      ),
+    );
+    adSection.appendChild(
+      createSliderRow(
+        '広告早送り速度',
+        'VOD・ライブ広告の再生速度',
+        data.adPlaybackRate,
+        (v) => chrome.storage.local.set({ adPlaybackRate: v }),
+        { min: 2, max: 16, step: 2, unit: 'x' },
+      ),
+    );
     tabSettings.appendChild(adSection);
 
     const utilSection = createSection('ユーティリティ');
-    utilSection.appendChild(createToggleRow(
-      'ポイント自動取得', 'チャンネルポイントボタンを自動クリック',
-      data.autoPointsEnabled, (v) => chrome.storage.local.set({ autoPointsEnabled: v }),
-    ));
-    utilSection.appendChild(createToggleRow(
-      'チャット維持', '折り畳み時もチャットを維持しスワップを有効化',
-      data.chatKeeperEnabled, (v) => chrome.storage.local.set({ chatKeeperEnabled: v }),
-    ));
+    utilSection.appendChild(
+      createToggleRow('ポイント自動取得', 'チャンネルポイントボタンを自動クリック', data.autoPointsEnabled, (v) =>
+        chrome.storage.local.set({ autoPointsEnabled: v }),
+      ),
+    );
+    utilSection.appendChild(
+      createToggleRow('チャット維持', '折り畳み時もチャットを維持しスワップを有効化', data.chatKeeperEnabled, (v) =>
+        chrome.storage.local.set({ chatKeeperEnabled: v }),
+      ),
+    );
     tabSettings.appendChild(utilSection);
 
     const displaySection = createSection('表示');
-    displaySection.appendChild(createSliderRow(
-      'オーバーレイ不透明度', '広告スキップ中の暗転の濃さ',
-      data.overlayOpacity, (v) => chrome.storage.local.set({ overlayOpacity: v }),
-    ));
+    displaySection.appendChild(
+      createSliderRow('オーバーレイ不透明度', '広告スキップ中の暗転の濃さ', data.overlayOpacity, (v) =>
+        chrome.storage.local.set({ overlayOpacity: v }),
+      ),
+    );
     tabSettings.appendChild(displaySection);
   });
 }
@@ -159,7 +171,9 @@ function renderTwitchStatus(data: {
     ...tagLogs(data.vodAd?.log ?? [], 'VOD', 'log-tag--vod'),
     ...tagLogs(data.liveAd?.log ?? [], 'LIVE', 'log-tag--live'),
     ...tagLogs(data.chat?.log ?? [], 'CHAT', 'log-tag--chat'),
-  ].sort((a, b) => a.entry.localeCompare(b.entry)).reverse();
+  ]
+    .sort((a, b) => a.entry.localeCompare(b.entry))
+    .reverse();
 
   renderLogEntries(logEl, currentLogs);
 }

@@ -1,4 +1,10 @@
-import { showSkipOverlay, hideSkipOverlay, updateSkipOverlayTimer, parseRemainingSeconds, rateForRemaining } from '@ad-skipper/shared';
+import {
+  showSkipOverlay,
+  hideSkipOverlay,
+  updateSkipOverlayTimer,
+  parseRemainingSeconds,
+  rateForRemaining,
+} from '@ad-skipper/shared';
 
 const AD_OVERLAY_SELECTOR = '[class*="atvwebplayersdk-ad"]';
 const AD_TIMER_SELECTOR = '.atvwebplayersdk-ad-timer-remaining-time';
@@ -186,7 +192,10 @@ export class PrimeAdHandler {
   private waitForContentPlaying(): Promise<void> {
     return new Promise((resolve) => {
       const video = this.findPlayingVideo();
-      if (!video) { resolve(); return; }
+      if (!video) {
+        resolve();
+        return;
+      }
 
       const startTime = video.currentTime;
       let checks = 0;

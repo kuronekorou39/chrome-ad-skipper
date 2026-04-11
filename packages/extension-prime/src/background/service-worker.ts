@@ -9,10 +9,7 @@ chrome.runtime.onMessage.addListener((message, sender) => {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.url) {
     const url = changeInfo.url;
-    const isSupported =
-      url.includes('amazon.co') ||
-      url.includes('amazon.com') ||
-      url.includes('primevideo.com');
+    const isSupported = url.includes('amazon.co') || url.includes('amazon.com') || url.includes('primevideo.com');
     if (!isSupported) {
       chrome.action.setBadgeText({ text: '', tabId });
     }

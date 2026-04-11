@@ -43,7 +43,7 @@ export function analyzeAdBreak(playlist: HlsPlaylist): AdBreakInfo {
   // Also check for DATERANGE-based ads
   if (!active) {
     const hasTwitchAd = adMarkers.some(
-      (m) => m.type === 'DATERANGE' && m.dateRangeAttributes?.['CLASS'] === 'twitch-stitched'
+      (m) => m.type === 'DATERANGE' && m.dateRangeAttributes?.['CLASS'] === 'twitch-stitched',
     );
     if (hasTwitchAd) {
       active = true;
@@ -70,9 +70,7 @@ export function analyzeAdBreak(playlist: HlsPlaylist): AdBreakInfo {
     remaining = Math.max(0, totalDuration - elapsed);
   } else if (totalDuration != null) {
     // Estimate elapsed from ad segments
-    const segElapsed = segments
-      .filter((s) => s.isAd)
-      .reduce((sum, s) => sum + s.duration, 0);
+    const segElapsed = segments.filter((s) => s.isAd).reduce((sum, s) => sum + s.duration, 0);
     remaining = Math.max(0, totalDuration - segElapsed);
   }
 

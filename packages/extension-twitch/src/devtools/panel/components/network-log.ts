@@ -60,10 +60,14 @@ export class NetworkLog {
 
   private getTypeColor(type: string): string {
     switch (type) {
-      case 'master-playlist': return '#3498db';
-      case 'media-playlist': return '#2ecc71';
-      case 'segment': return '#9b59b6';
-      default: return '#666';
+      case 'master-playlist':
+        return '#3498db';
+      case 'media-playlist':
+        return '#2ecc71';
+      case 'segment':
+        return '#9b59b6';
+      default:
+        return '#666';
     }
   }
 }

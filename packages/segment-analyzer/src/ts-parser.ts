@@ -147,10 +147,10 @@ function parseAdaptationField(data: Buffer, offset: number): AdaptationField {
     if (af.pcrFlag && length >= 7) {
       // PCR is 33 bits base + 9 bits extension
       const base =
-        (data[offset + 2] * 0x02000000) +
-        (data[offset + 3] * 0x020000) +
-        (data[offset + 4] * 0x0200) +
-        (data[offset + 5] * 0x02) +
+        data[offset + 2] * 0x02000000 +
+        data[offset + 3] * 0x020000 +
+        data[offset + 4] * 0x0200 +
+        data[offset + 5] * 0x02 +
         ((data[offset + 6] >> 7) & 0x01);
       af.pcr = base;
     }

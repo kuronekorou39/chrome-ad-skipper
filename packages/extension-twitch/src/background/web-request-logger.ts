@@ -65,7 +65,7 @@ export function setupWebRequestLogger(): void {
         playlistFetcher.fetchAndParse(details.url, details.tabId);
       }
     },
-    { urls: ['<all_urls>'] }
+    { urls: ['<all_urls>'] },
   );
 
   // Listen for response headers
@@ -77,23 +77,19 @@ export function setupWebRequestLogger(): void {
       entry.statusCode = details.statusCode;
 
       // Extract content-type from headers
-      const contentType = details.responseHeaders?.find(
-        (h) => h.name.toLowerCase() === 'content-type'
-      );
+      const contentType = details.responseHeaders?.find((h) => h.name.toLowerCase() === 'content-type');
       if (contentType?.value) {
         entry.contentType = contentType.value;
       }
 
       // Extract content-length
-      const contentLength = details.responseHeaders?.find(
-        (h) => h.name.toLowerCase() === 'content-length'
-      );
+      const contentLength = details.responseHeaders?.find((h) => h.name.toLowerCase() === 'content-length');
       if (contentLength?.value) {
         entry.responseSize = parseInt(contentLength.value, 10);
       }
     },
     { urls: ['<all_urls>'] },
-    ['responseHeaders']
+    ['responseHeaders'],
   );
 
   // Listen for request completion
@@ -117,14 +113,15 @@ export function setupWebRequestLogger(): void {
 
       dataStore.add(entry.tabId, message);
       broadcastToDevTools(entry.tabId, message);
-
     },
-    { urls: ['<all_urls>'] }
+    { urls: ['<all_urls>'] },
   );
 
   // Clean up on error
-  chrome.webRequest.onErrorOccurred.addListener((details) => {
-    pendingRequests.delete(details.requestId);
-  }, { urls: ['<all_urls>'] });
-
+  chrome.webRequest.onErrorOccurred.addListener(
+    (details) => {
+      pendingRequests.delete(details.requestId);
+    },
+    { urls: ['<all_urls>'] },
+  );
 }

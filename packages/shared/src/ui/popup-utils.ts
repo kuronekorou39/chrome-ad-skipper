@@ -18,10 +18,7 @@ export function escapeHtml(s: string): string {
 }
 
 /** Set up tab switching for the popup's tab bar. */
-export function setupTabSwitching(
-  tabElements: Record<string, HTMLElement>,
-  onTabChange?: (tab: string) => void,
-): void {
+export function setupTabSwitching(tabElements: Record<string, HTMLElement>, onTabChange?: (tab: string) => void): void {
   document.querySelectorAll<HTMLButtonElement>('.tab-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       document.querySelectorAll<HTMLButtonElement>('.tab-btn').forEach((b) => b.classList.remove('active'));
@@ -164,21 +161,17 @@ export function renderLogEntries(logEl: HTMLElement, logs: TaggedLog[]): void {
 }
 
 /** Set up the log copy button with clipboard support and visual feedback. */
-export function setupLogCopy(
-  copyBtn: HTMLElement,
-  getLogs: () => TaggedLog[],
-): void {
+export function setupLogCopy(copyBtn: HTMLElement, getLogs: () => TaggedLog[]): void {
   copyBtn.addEventListener('click', () => {
     const logs = getLogs();
     if (logs.length === 0) return;
 
-    const text = logs
-      .map(({ tag, entry }) => `[${tag}] ${entry}`)
-      .join('\n');
+    const text = logs.map(({ tag, entry }) => `[${tag}] ${entry}`).join('\n');
 
     const originalHTML = copyBtn.innerHTML;
     navigator.clipboard.writeText(text).then(() => {
-      copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> OK';
+      copyBtn.innerHTML =
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> OK';
       copyBtn.classList.add('copied');
       setTimeout(() => {
         copyBtn.innerHTML = originalHTML;

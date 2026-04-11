@@ -102,7 +102,11 @@ export class YouTubeAdHandler {
         return;
       }
       this.observer = new MutationObserver(() => {
-        try { this.check(); } catch { /* handled by poll */ }
+        try {
+          this.check();
+        } catch {
+          /* handled by poll */
+        }
       });
       this.observer.observe(player, { attributes: true, attributeFilter: ['class'] });
     };
@@ -135,7 +139,6 @@ export class YouTubeAdHandler {
 
       const timerText = this.getAdTimerText();
       updateSkipOverlayTimer(timerText ? `広告 ${timerText}` : '');
-
     } else if (this.isAdPlaying && !adShowing) {
       this.adSkipCount++;
       this.log(`Ad ended (#${this.adSkipCount})`);

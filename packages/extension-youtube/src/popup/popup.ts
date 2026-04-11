@@ -23,7 +23,9 @@ setupTabSwitching(
     log: document.getElementById('tab-log')!,
     settings: tabSettings,
   },
-  (tab) => { if (tab === 'settings') renderSettingsTab(); },
+  (tab) => {
+    if (tab === 'settings') renderSettingsTab();
+  },
 );
 
 let currentLogs: TaggedLog[] = [];
@@ -53,17 +55,19 @@ function renderSettingsTab(): void {
     tabSettings.innerHTML = '';
 
     const section = createSection('YouTube');
-    section.appendChild(createToggleRow(
-      '自動スキップ', 'スキップボタンの自動クリック・広告シーク',
-      data.ytAutoSkip, (v) => chrome.storage.local.set({ ytAutoSkip: v }),
-    ));
+    section.appendChild(
+      createToggleRow('自動スキップ', 'スキップボタンの自動クリック・広告シーク', data.ytAutoSkip, (v) =>
+        chrome.storage.local.set({ ytAutoSkip: v }),
+      ),
+    );
     tabSettings.appendChild(section);
 
     const displaySection = createSection('表示');
-    displaySection.appendChild(createSliderRow(
-      'オーバーレイ不透明度', '広告スキップ中の暗転の濃さ',
-      data.overlayOpacity, (v) => chrome.storage.local.set({ overlayOpacity: v }),
-    ));
+    displaySection.appendChild(
+      createSliderRow('オーバーレイ不透明度', '広告スキップ中の暗転の濃さ', data.overlayOpacity, (v) =>
+        chrome.storage.local.set({ overlayOpacity: v }),
+      ),
+    );
     tabSettings.appendChild(displaySection);
   });
 }

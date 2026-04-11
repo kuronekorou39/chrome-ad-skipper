@@ -39,7 +39,6 @@ bridge.onMessage((msg: PageMessage) => {
       safeSendMessage(extMsg);
       break;
     }
-
   }
 });
 
@@ -119,7 +118,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 // Load settings and start modules conditionally
 chrome.storage.local.get(
-  ['streamSwapEnabled', 'vodAdSkipEnabled', 'autoPointsEnabled', 'chatKeeperEnabled', 'liveAdMuteEnabled', 'adPlaybackRate', 'overlayOpacity'],
+  [
+    'streamSwapEnabled',
+    'vodAdSkipEnabled',
+    'autoPointsEnabled',
+    'chatKeeperEnabled',
+    'liveAdMuteEnabled',
+    'adPlaybackRate',
+    'overlayOpacity',
+  ],
   (data) => {
     const swapEnabled = data.streamSwapEnabled !== false;
     const vodEnabled = data.vodAdSkipEnabled !== false;

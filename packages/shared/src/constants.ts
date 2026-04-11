@@ -1,16 +1,8 @@
 /** Twitch CDN domains for HLS */
-export const TWITCH_HLS_DOMAINS = [
-  '*.hls.ttvnw.net',
-  '*.ttvnw.net',
-  '*.cloudfront.net',
-] as const;
+export const TWITCH_HLS_DOMAINS = ['*.hls.ttvnw.net', '*.ttvnw.net', '*.cloudfront.net'] as const;
 
 /** URL patterns to match HLS-related requests */
-export const HLS_URL_PATTERNS = [
-  '*://*.hls.ttvnw.net/*',
-  '*://*.ttvnw.net/*',
-  '*://*.cloudfront.net/*',
-] as const;
+export const HLS_URL_PATTERNS = ['*://*.hls.ttvnw.net/*', '*://*.ttvnw.net/*', '*://*.cloudfront.net/*'] as const;
 
 /** File extensions for HLS resources */
 export const HLS_EXTENSIONS = {

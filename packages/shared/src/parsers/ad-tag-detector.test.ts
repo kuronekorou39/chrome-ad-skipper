@@ -2,10 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { analyzeAdBreak, isLikelyAdSegmentUrl } from './ad-tag-detector.js';
 import type { HlsPlaylist, AdMarker, HlsSegment } from '../types/hls.js';
 
-function makePlaylist(
-  segments: Partial<HlsSegment>[],
-  adMarkers: AdMarker[] = [],
-): HlsPlaylist {
+function makePlaylist(segments: Partial<HlsSegment>[], adMarkers: AdMarker[] = []): HlsPlaylist {
   return {
     url: 'https://example.com/playlist.m3u8',
     targetDuration: 2,
@@ -39,14 +36,7 @@ describe('analyzeAdBreak', () => {
     const markers: AdMarker[] = [
       { type: 'CUE-OUT', duration: 30, raw: '#EXT-X-CUE-OUT:30', lineIndex: 3, segmentIndex: 1 },
     ];
-    const playlist = makePlaylist(
-      [
-        { isAd: false },
-        { isAd: true },
-        { isAd: true },
-      ],
-      markers,
-    );
+    const playlist = makePlaylist([{ isAd: false }, { isAd: true }, { isAd: true }], markers);
 
     const result = analyzeAdBreak(playlist);
 
@@ -61,15 +51,7 @@ describe('analyzeAdBreak', () => {
       { type: 'CUE-OUT', duration: 30, raw: '#EXT-X-CUE-OUT:30', lineIndex: 3, segmentIndex: 1 },
       { type: 'CUE-IN', raw: '#EXT-X-CUE-IN', lineIndex: 8, segmentIndex: 3 },
     ];
-    const playlist = makePlaylist(
-      [
-        { isAd: false },
-        { isAd: true },
-        { isAd: true },
-        { isAd: false },
-      ],
-      markers,
-    );
+    const playlist = makePlaylist([{ isAd: false }, { isAd: true }, { isAd: true }, { isAd: false }], markers);
 
     const result = analyzeAdBreak(playlist);
 
@@ -83,12 +65,7 @@ describe('analyzeAdBreak', () => {
       { type: 'CUE-OUT-CONT', raw: '#EXT-X-CUE-OUT-CONT:20.000/60.000', lineIndex: 6, segmentIndex: 3 },
     ];
     const playlist = makePlaylist(
-      [
-        { isAd: false },
-        { isAd: true, duration: 2 },
-        { isAd: true, duration: 2 },
-        { isAd: true, duration: 2 },
-      ],
+      [{ isAd: false }, { isAd: true, duration: 2 }, { isAd: true, duration: 2 }, { isAd: true, duration: 2 }],
       markers,
     );
 
@@ -159,15 +136,7 @@ describe('analyzeAdBreak', () => {
       { type: 'CUE-IN', raw: '#EXT-X-CUE-IN', lineIndex: 5, segmentIndex: 2 },
       { type: 'CUE-OUT', duration: 30, raw: '#EXT-X-CUE-OUT:30', lineIndex: 8, segmentIndex: 3 },
     ];
-    const playlist = makePlaylist(
-      [
-        { isAd: true },
-        { isAd: true },
-        { isAd: false },
-        { isAd: true },
-      ],
-      markers,
-    );
+    const playlist = makePlaylist([{ isAd: true }, { isAd: true }, { isAd: false }, { isAd: true }], markers);
 
     const result = analyzeAdBreak(playlist);
     expect(result.active).toBe(true);

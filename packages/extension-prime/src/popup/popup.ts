@@ -23,7 +23,9 @@ setupTabSwitching(
     log: document.getElementById('tab-log')!,
     settings: tabSettings,
   },
-  (tab) => { if (tab === 'settings') renderSettingsTab(); },
+  (tab) => {
+    if (tab === 'settings') renderSettingsTab();
+  },
 );
 
 let currentLogs: TaggedLog[] = [];
@@ -53,17 +55,19 @@ function renderSettingsTab(): void {
     tabSettings.innerHTML = '';
 
     const section = createSection('Prime Video');
-    section.appendChild(createToggleRow(
-      '自動スキップ', '広告を自動で倍速+ミュートして早送り',
-      data.pvAutoSkip, (v) => chrome.storage.local.set({ pvAutoSkip: v }),
-    ));
+    section.appendChild(
+      createToggleRow('自動スキップ', '広告を自動で倍速+ミュートして早送り', data.pvAutoSkip, (v) =>
+        chrome.storage.local.set({ pvAutoSkip: v }),
+      ),
+    );
     tabSettings.appendChild(section);
 
     const displaySection = createSection('表示');
-    displaySection.appendChild(createSliderRow(
-      'オーバーレイ不透明度', '広告スキップ中の暗転の濃さ',
-      data.overlayOpacity, (v) => chrome.storage.local.set({ overlayOpacity: v }),
-    ));
+    displaySection.appendChild(
+      createSliderRow('オーバーレイ不透明度', '広告スキップ中の暗転の濃さ', data.overlayOpacity, (v) =>
+        chrome.storage.local.set({ overlayOpacity: v }),
+      ),
+    );
     tabSettings.appendChild(displaySection);
   });
 }
@@ -83,11 +87,11 @@ function renderPrimeStatus(data: {
 }): void {
   const { prime } = data;
   const dotClass = prime.isAdPlaying ? 'dot--yellow' : 'dot--blue';
-  const title = (data.title ?? '')
-    .replace(/^Amazon\.co\.jp:\s*/, '')
-    .replace(/^Amazon\.com:\s*/, '')
-    .replace(/\s*-\s*Prime Video\s*$/, '')
-    || 'Prime Video';
+  const title =
+    (data.title ?? '')
+      .replace(/^Amazon\.co\.jp:\s*/, '')
+      .replace(/^Amazon\.com:\s*/, '')
+      .replace(/\s*-\s*Prime Video\s*$/, '') || 'Prime Video';
   connectionEl.innerHTML = `<span class="dot ${dotClass}"></span>${escapeHtml(title)}`;
 
   const stateLabel = prime.isAdPlaying ? '広告スキップ中 (16x)' : '本編再生中';
@@ -121,10 +125,7 @@ function poll(): void {
     }
 
     const url = tab.url;
-    const isPrime =
-      url.includes('amazon.co') ||
-      url.includes('amazon.com') ||
-      url.includes('primevideo.com');
+    const isPrime = url.includes('amazon.co') || url.includes('amazon.com') || url.includes('primevideo.com');
 
     if (!isPrime) {
       renderDisconnected('Prime Videoを開いてください');

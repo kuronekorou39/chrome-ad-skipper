@@ -8,10 +8,7 @@ import { MESSAGE_SOURCE } from '@ad-skipper/shared';
  * block those resets while the lock is active.
  */
 
-const originalDesc = Object.getOwnPropertyDescriptor(
-  HTMLMediaElement.prototype,
-  'playbackRate',
-)!;
+const originalDesc = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'playbackRate')!;
 
 let lockedVideo: HTMLVideoElement | null = null;
 

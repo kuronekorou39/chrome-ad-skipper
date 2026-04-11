@@ -7,11 +7,7 @@ export function setupFetchHook(): void {
   const originalFetch = window.fetch;
 
   window.fetch = function (input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-    const url = typeof input === 'string'
-      ? input
-      : input instanceof URL
-        ? input.href
-        : input.url;
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
 
     // Only report HLS-related fetches
     if (isHlsRelated(url)) {
@@ -25,13 +21,12 @@ export function setupFetchHook(): void {
             timestamp: Date.now(),
           },
         },
-        '*'
+        '*',
       );
     }
 
     return originalFetch.call(this, input, init);
   };
-
 }
 
 function isHlsRelated(url: string): boolean {

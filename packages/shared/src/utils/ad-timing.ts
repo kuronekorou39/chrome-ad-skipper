@@ -32,7 +32,7 @@ export function parseRemainingSeconds(text: string): number {
  * @returns Playback rate multiplier (1 = normal speed)
  */
 export function rateForRemaining(remainingSeconds: number, maxRate = 16): number {
-  if (remainingSeconds <= 2) return 1;   // last 2s: normal speed, no overshoot
+  if (remainingSeconds <= 2) return 1; // last 2s: normal speed, no overshoot
   if (remainingSeconds <= 5) return 2;
   if (remainingSeconds <= 10) return 4;
   return maxRate;

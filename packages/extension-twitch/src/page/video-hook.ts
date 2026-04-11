@@ -54,7 +54,6 @@ export function setupVideoHook(): void {
 
   // Listen for swap activate/deactivate from content script
   window.addEventListener('message', handleSwapMessage);
-
 }
 
 function handleSwapMessage(event: MessageEvent): void {
@@ -75,9 +74,7 @@ function activateSwapOverrides(subVideoIndex?: number): void {
   if (videos.length < 2) return;
 
   // Use the index passed from content script; fall back to [1] if unavailable
-  const idx = (subVideoIndex !== undefined && subVideoIndex >= 0 && subVideoIndex < videos.length)
-    ? subVideoIndex
-    : 1;
+  const idx = subVideoIndex !== undefined && subVideoIndex >= 0 && subVideoIndex < videos.length ? subVideoIndex : 1;
   swapTargetVideo = videos[idx];
   swapActive = true;
 
@@ -88,7 +85,11 @@ function activateSwapOverrides(subVideoIndex?: number): void {
     Object.defineProperty(HTMLMediaElement.prototype, 'muted', {
       configurable: true,
       enumerable: true,
-      get: origGet ? function (this: HTMLMediaElement) { return origGet.call(this); } : undefined,
+      get: origGet
+        ? function (this: HTMLMediaElement) {
+            return origGet.call(this);
+          }
+        : undefined,
       set(this: HTMLMediaElement, value: boolean) {
         if (swapActive && this === swapTargetVideo && value === true) {
           // Block muting the sub-stream during swap
@@ -106,7 +107,11 @@ function activateSwapOverrides(subVideoIndex?: number): void {
     Object.defineProperty(HTMLMediaElement.prototype, 'volume', {
       configurable: true,
       enumerable: true,
-      get: origGet ? function (this: HTMLMediaElement) { return origGet.call(this); } : undefined,
+      get: origGet
+        ? function (this: HTMLMediaElement) {
+            return origGet.call(this);
+          }
+        : undefined,
       set(this: HTMLMediaElement, value: number) {
         if (swapActive && this === swapTargetVideo && value === 0) {
           // Block zeroing volume on the sub-stream during swap
@@ -145,6 +150,6 @@ function postVideoEvent(event: string, src: string, el: HTMLMediaElement): void 
         timestamp: Date.now(),
       },
     },
-    '*'
+    '*',
   );
 }

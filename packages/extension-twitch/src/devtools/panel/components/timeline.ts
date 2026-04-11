@@ -155,9 +155,9 @@ export class Timeline {
     const rows: Record<string, number> = {
       'master-playlist': 0,
       'media-playlist': 1,
-      'segment': 2,
+      segment: 2,
       'ad-marker': 3,
-      'unknown': 4,
+      unknown: 4,
     };
 
     for (const event of this.events) {
@@ -181,11 +181,16 @@ export class Timeline {
 
   private getColorForType(type: string): string {
     switch (type) {
-      case 'master-playlist': return '#3498db';
-      case 'media-playlist': return '#2ecc71';
-      case 'segment': return '#9b59b6';
-      case 'ad-marker': return '#e74c3c';
-      default: return '#666';
+      case 'master-playlist':
+        return '#3498db';
+      case 'media-playlist':
+        return '#2ecc71';
+      case 'segment':
+        return '#9b59b6';
+      case 'ad-marker':
+        return '#e74c3c';
+      default:
+        return '#666';
     }
   }
 

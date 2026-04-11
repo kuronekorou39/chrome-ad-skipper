@@ -25,13 +25,14 @@
     "bump:youtube:minor": "npm version minor --no-git-tag-version -w packages/extension-youtube",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint 'packages/*/src/**/*.ts'",
-    "lint:fix": "eslint 'packages/*/src/**/*.ts' --fix",
-    "format": "prettier --write 'packages/*/src/**/*.ts'",
-    "format:check": "prettier --check 'packages/*/src/**/*.ts'"
+    "lint": "eslint packages/*/src/**/*.ts",
+    "lint:fix": "eslint packages/*/src/**/*.ts --fix",
+    "format": "prettier --write packages/*/src/**/*.ts",
+    "format:check": "prettier --check packages/*/src/**/*.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@vitest/coverage-v8": "^2.1.9",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.8.2",

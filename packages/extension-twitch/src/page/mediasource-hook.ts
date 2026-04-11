@@ -2,10 +2,7 @@ import { MESSAGE_SOURCE } from '@ad-skipper/shared';
 import type { MediaSourceEvent } from '@ad-skipper/shared';
 
 function postEvent(event: MediaSourceEvent): void {
-  window.postMessage(
-    { source: MESSAGE_SOURCE.PAGE, type: 'mediasource-event', data: event },
-    '*'
-  );
+  window.postMessage({ source: MESSAGE_SOURCE.PAGE, type: 'mediasource-event', data: event }, '*');
 }
 
 /**
@@ -81,5 +78,4 @@ export function setupMediaSourceHook(): void {
     });
     return originalEndOfStream.call(this, error);
   };
-
 }

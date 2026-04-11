@@ -1,11 +1,4 @@
-import type {
-  HlsPlaylist,
-  HlsSegment,
-  HlsMasterPlaylist,
-  HlsVariant,
-  AdMarker,
-  AdState,
-} from '../types/hls.js';
+import type { HlsPlaylist, HlsSegment, HlsMasterPlaylist, HlsVariant, AdMarker, AdState } from '../types/hls.js';
 import { AD_TAGS } from '../constants.js';
 
 /**
@@ -122,9 +115,7 @@ export function parseMediaPlaylist(raw: string, url: string): HlsPlaylist {
 
       // Only treat ad-related DATERANGE as ad markers
       // Skip Twitch metadata: timestamp, twitch-session, twitch-stream-source, twitch-trigger
-      const isAdRelated = cls === 'twitch-stitched' ||
-        cls.includes('ad') ||
-        cls.includes('commercial');
+      const isAdRelated = cls === 'twitch-stitched' || cls.includes('ad') || cls.includes('commercial');
 
       if (isAdRelated) {
         adMarkers.push({
@@ -271,7 +262,7 @@ function detectAdState(markers: AdMarker[]): AdState {
 
   // Has DATERANGE markers only
   const hasTwitchStitched = markers.some(
-    (m) => m.type === 'DATERANGE' && m.dateRangeAttributes?.['CLASS'] === 'twitch-stitched'
+    (m) => m.type === 'DATERANGE' && m.dateRangeAttributes?.['CLASS'] === 'twitch-stitched',
   );
   if (hasTwitchStitched) return 'mid-roll';
 
