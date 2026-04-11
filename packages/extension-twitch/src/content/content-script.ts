@@ -44,11 +44,6 @@ bridge.onMessage((msg: PageMessage) => {
       break;
     }
 
-    case 'fetch-intercept':
-      break;
-
-    case 'video-event':
-      break;
   }
 });
 

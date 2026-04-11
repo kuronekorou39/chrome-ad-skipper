@@ -13,8 +13,6 @@ const TAB_ELEMENTS: Record<string, HTMLElement> = {
   settings: tabSettings,
 };
 
-let currentTabId: number | null = null;
-
 const manifest = chrome.runtime.getManifest();
 versionEl.textContent = `v${manifest.version}`;
 
@@ -264,8 +262,6 @@ function poll(): void {
       renderDisconnected('YouTubeを開いてください');
       return;
     }
-
-    currentTabId = tab.id;
 
     chrome.tabs.sendMessage(tab.id, { type: 'get-youtube-status' }, (response) => {
       if (chrome.runtime.lastError || !response) {

@@ -1,6 +1,5 @@
 import {
   parseMediaPlaylist,
-  parseMasterPlaylist,
   isMasterPlaylist,
   analyzeAdBreak,
 } from '@ad-skipper/shared';

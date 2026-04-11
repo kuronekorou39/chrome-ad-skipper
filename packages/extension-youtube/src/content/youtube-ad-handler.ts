@@ -26,7 +26,6 @@ export class YouTubeAdHandler {
   private eventLog: string[] = [];
   private stateCallbacks: StateChangeCallback[] = [];
   private lastSkipAttempt = 0;
-  private apiDumped = false;
 
   onStateChange(cb: StateChangeCallback): void {
     this.stateCallbacks.push(cb);
@@ -123,12 +122,6 @@ export class YouTubeAdHandler {
         this.log('Ad detected');
         this.emitState('ad');
         showSkipOverlay();
-
-        // Dump player API once to see what methods are available
-        if (!this.apiDumped) {
-          this.apiDumped = true;
-          window.postMessage({ source: 'yt-ad-skipper', type: 'dump-player-api' }, '*');
-        }
       }
 
       // Retry skip every SKIP_RETRY_INTERVAL

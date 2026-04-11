@@ -11,8 +11,6 @@ window.addEventListener('message', (event) => {
     skipAd();
   } else if (event.data.type === 'resume-playback') {
     resumePlayback();
-  } else if (event.data.type === 'dump-player-api') {
-    dumpPlayerApi();
   }
 });
 
@@ -52,50 +50,6 @@ function skipAd(): void {
   }
 
   report('failed', 'no method worked');
-}
-
-function dumpPlayerApi(): void {
-  const player = document.getElementById('movie_player') as any;
-  if (!player) {
-    report('dump', 'player not found');
-    return;
-  }
-
-  // Find all methods that look ad-related
-  const methods: string[] = [];
-  for (const key of Object.getOwnPropertyNames(Object.getPrototypeOf(player))) {
-    if (typeof player[key] === 'function') {
-      const lower = key.toLowerCase();
-      if (lower.includes('ad') || lower.includes('skip') || lower.includes('seek')
-          || lower.includes('duration') || lower.includes('playback')
-          || lower.includes('video') || lower.includes('state')) {
-        methods.push(key);
-      }
-    }
-  }
-
-  // Also check own properties
-  for (const key of Object.keys(player)) {
-    if (typeof player[key] === 'function') {
-      const lower = key.toLowerCase();
-      if (lower.includes('ad') || lower.includes('skip')) {
-        if (!methods.includes(key)) methods.push(key);
-      }
-    }
-  }
-
-  report('dump', methods.join(', ') || '(no ad-related methods found)');
-
-  // Also report current video state
-  const video = document.querySelector<HTMLVideoElement>('video');
-  if (video) {
-    report('video-state',
-      `currentTime=${video.currentTime.toFixed(1)}, ` +
-      `duration=${video.duration}, ` +
-      `paused=${video.paused}, ` +
-      `playbackRate=${video.playbackRate}`
-    );
-  }
 }
 
 /** Resume playback after ad skip — video may be paused/ended */

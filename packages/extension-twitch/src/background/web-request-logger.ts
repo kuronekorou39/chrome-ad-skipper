@@ -128,9 +128,3 @@ export function setupWebRequestLogger(): void {
   }, { urls: ['<all_urls>'] });
 
 }
-
-function truncateUrl(url: string): string {
-  const maxLen = 80;
-  if (url.length <= maxLen) return url;
-  return url.slice(0, maxLen - 3) + '...';
-}
