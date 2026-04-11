@@ -75,7 +75,7 @@ export class PrimeAdHandler {
       try {
         this.check();
       } catch (e) {
-        this.log(`Error: ${(e as Error).message}`);
+        this.log(`Error: ${e instanceof Error ? e.message : String(e)}`);
       }
     }, POLL_INTERVAL);
   }

@@ -13,12 +13,8 @@ import { setOverlayOpacity } from './skip-overlay';
 /** Safely send a message to the background. Stops polling if context is dead. */
 function safeSendMessage(msg: unknown): void {
   try {
-    chrome.runtime.sendMessage(msg).catch((err) => {
-      console.warn('[広告スキッパー:Twitch] sendMessage rejected:', err?.message);
-    });
+    chrome.runtime.sendMessage(msg).catch(() => {});
   } catch (err) {
-    console.error('[広告スキッパー:Twitch] sendMessage threw:', (err as Error)?.message);
-    // Only stop if context is truly invalidated
     if ((err as Error)?.message?.includes('Extension context invalidated')) {
       videoTracker.stopPolling();
       domObserver.stop();

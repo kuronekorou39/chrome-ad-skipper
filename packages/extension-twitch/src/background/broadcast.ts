@@ -18,8 +18,7 @@ export function broadcastToDevTools(tabId: number, message: unknown): void {
   if (!port) return;
   try {
     port.postMessage(message);
-  } catch (err) {
-    console.error('[Broadcast] postMessage failed for', (message as { type?: string })?.type, err);
+  } catch {
     devToolsPorts.delete(tabId);
   }
 }

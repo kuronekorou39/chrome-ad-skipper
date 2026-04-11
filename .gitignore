@@ -30,6 +30,7 @@ npm-debug.log*
 
 # Development artifacts
 bk/
+RESEARCH.md
 
 # Claude Code
 .claude/

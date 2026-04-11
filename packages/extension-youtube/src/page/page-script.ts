@@ -3,6 +3,18 @@
  * Can access YouTube's internal player API.
  */
 
+/** YouTube's internal player API (undocumented, may change) */
+interface YTPlayer extends HTMLElement {
+  skipAd?: () => void;
+  cancelPlayback?: () => void;
+  finishAd?: () => void;
+  exitAd?: () => void;
+  getDuration?: () => number;
+  seekTo?: (seconds: number, allowSeekAhead: boolean) => void;
+  playVideo?: () => void;
+  [key: string]: unknown;
+}
+
 window.addEventListener('message', (event) => {
   if (event.source !== window) return;
   if (!event.data || event.data.source !== 'yt-ad-skipper') return;
@@ -14,23 +26,26 @@ window.addEventListener('message', (event) => {
   }
 });
 
+function getPlayer(): YTPlayer | null {
+  return document.getElementById('movie_player') as YTPlayer | null;
+}
+
 function skipAd(): void {
-  const player = document.getElementById('movie_player') as any;
+  const player = getPlayer();
 
   // Method 1: Try known player API methods
   if (player) {
-    // Try skipAd variants
-    for (const method of ['skipAd', 'cancelPlayback', 'finishAd', 'exitAd']) {
+    for (const method of ['skipAd', 'cancelPlayback', 'finishAd', 'exitAd'] as const) {
       if (typeof player[method] === 'function') {
         try {
-          player[method]();
+          (player[method] as () => void)();
           report('api-call', method);
           return;
         } catch { /* continue */ }
       }
     }
 
-    // Try seeking via player API
+    // Method 2: Seek via player API
     if (typeof player.getDuration === 'function' && typeof player.seekTo === 'function') {
       const duration = player.getDuration();
       if (duration && isFinite(duration)) {
@@ -41,7 +56,7 @@ function skipAd(): void {
     }
   }
 
-  // Method 2: Seek the <video> element directly to end of ad
+  // Method 3: Seek the <video> element directly to end of ad
   const video = document.querySelector<HTMLVideoElement>('video');
   if (video && video.duration && isFinite(video.duration) && !video.paused) {
     video.currentTime = video.duration;
@@ -54,16 +69,14 @@ function skipAd(): void {
 
 /** Resume playback after ad skip — video may be paused/ended */
 function resumePlayback(): void {
-  const player = document.getElementById('movie_player') as any;
+  const player = getPlayer();
 
-  // Try player API first
   if (player && typeof player.playVideo === 'function') {
     player.playVideo();
     report('resume', 'playVideo()');
     return;
   }
 
-  // Fallback: direct video.play()
   const video = document.querySelector<HTMLVideoElement>('video');
   if (video && video.paused) {
     video.play().catch(() => {});

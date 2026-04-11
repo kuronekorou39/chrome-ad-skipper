@@ -44,8 +44,8 @@ export class VideoTracker {
       for (const cb of this.callbacks) {
         cb(states);
       }
-    } catch (err) {
-      console.error('[VideoTracker] captureAndBroadcast error:', err);
+    } catch {
+      // Video element may have been removed from DOM
     }
   }
 

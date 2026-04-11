@@ -1,7 +1,6 @@
 import {
   parseMediaPlaylist,
   isMasterPlaylist,
-  analyzeAdBreak,
 } from '@ad-skipper/shared';
 import type { ExtPlaylistUpdate, ExtAdDetected } from '@ad-skipper/shared';
 import { broadcastToDevTools } from './broadcast';
@@ -53,8 +52,6 @@ class PlaylistFetcher {
 
       // Check for ads
       if (playlist.adMarkers.length > 0) {
-        const adBreak = analyzeAdBreak(playlist);
-
         const adMsg: ExtAdDetected = {
           source: 'twitch-swap',
           type: 'ad-detected',

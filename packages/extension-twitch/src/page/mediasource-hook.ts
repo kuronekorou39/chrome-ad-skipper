@@ -13,10 +13,7 @@ function postEvent(event: MediaSourceEvent): void {
  */
 export function setupMediaSourceHook(): void {
   const OriginalMediaSource = window.MediaSource;
-  if (!OriginalMediaSource) {
-    console.warn('[MediaSourceHook] MediaSource not available');
-    return;
-  }
+  if (!OriginalMediaSource) return;
 
   // Hook constructor
   const originalCreateObjectURL = URL.createObjectURL;
