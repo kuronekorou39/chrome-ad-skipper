@@ -1,4 +1,4 @@
-import { showSkipOverlay, hideSkipOverlay, updateSkipOverlayTimer } from './skip-overlay';
+import { showSkipOverlay, hideSkipOverlay, updateSkipOverlayTimer } from '@ad-skipper/shared';
 
 const AD_OVERLAY_SELECTOR = '[class*="atvwebplayersdk-ad"]';
 const AD_TIMER_SELECTOR = '.atvwebplayersdk-ad-timer-remaining-time';

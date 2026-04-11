@@ -1,4 +1,4 @@
-import { showSkipOverlay, hideSkipOverlay } from './skip-overlay';
+import { showSkipOverlay, hideSkipOverlay } from '@ad-skipper/shared';
 
 const AD_SELECTOR = '[data-a-target="ax-overlay"] video, video[aria-label="Video Advertisement"]';
 const CHECK_INTERVAL = 500;

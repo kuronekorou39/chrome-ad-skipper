@@ -1,6 +1,6 @@
 import { MESSAGE_SOURCE } from '@ad-skipper/shared';
 import { isAdBreakActive } from './ad-detection';
-import { showSkipOverlay, hideSkipOverlay } from './skip-overlay';
+import { showSkipOverlay, hideSkipOverlay } from '@ad-skipper/shared';
 
 const CHECK_INTERVAL = 500;
 const DEFAULT_PLAYBACK_RATE = 16;

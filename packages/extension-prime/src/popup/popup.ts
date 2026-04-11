@@ -1,45 +1,39 @@
+import {
+  escapeHtml,
+  setupTabSwitching,
+  showVersion,
+  createSection,
+  createToggleRow,
+  createSliderRow,
+  renderLogEntries,
+  setupLogCopy,
+} from '@ad-skipper/shared';
+import type { TaggedLog } from '@ad-skipper/shared';
+
 const connectionEl = document.getElementById('connection')!;
 const statusPanel = document.getElementById('status-panel')!;
 const logEl = document.getElementById('log')!;
-const logCopyBtn = document.getElementById('log-copy')!;
-const versionEl = document.getElementById('version')!;
-const tabStatus = document.getElementById('tab-status')!;
-const tabLog = document.getElementById('tab-log')!;
 const tabSettings = document.getElementById('tab-settings')!;
 
-const TAB_ELEMENTS: Record<string, HTMLElement> = {
-  status: tabStatus,
-  log: tabLog,
-  settings: tabSettings,
-};
+showVersion(document.getElementById('version')!);
 
-const manifest = chrome.runtime.getManifest();
-versionEl.textContent = `v${manifest.version}`;
+setupTabSwitching(
+  {
+    status: document.getElementById('tab-status')!,
+    log: document.getElementById('tab-log')!,
+    settings: tabSettings,
+  },
+  (tab) => { if (tab === 'settings') renderSettingsTab(); },
+);
 
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
+let currentLogs: TaggedLog[] = [];
+setupLogCopy(document.getElementById('log-copy')!, () => currentLogs);
 
 function renderDisconnected(reason: string): void {
   connectionEl.innerHTML = `<span class="dot dot--red"></span>${escapeHtml(reason)}`;
   statusPanel.textContent = '';
   logEl.textContent = '';
 }
-
-// ── Tab switching ──
-
-document.querySelectorAll<HTMLButtonElement>('.tab-btn').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll<HTMLButtonElement>('.tab-btn').forEach((b) => b.classList.remove('active'));
-    btn.classList.add('active');
-
-    const tab = btn.dataset.tab ?? 'status';
-    for (const [key, el] of Object.entries(TAB_ELEMENTS)) {
-      el.classList.toggle('hidden', key !== tab);
-    }
-    if (tab === 'settings') renderSettingsTab();
-  });
-});
 
 // ── Settings ──
 
@@ -74,107 +68,11 @@ function renderSettingsTab(): void {
   });
 }
 
-function createSection(title: string): HTMLDivElement {
-  const section = document.createElement('div');
-  section.className = 'settings-section';
-  const heading = document.createElement('div');
-  heading.className = 'settings-section-title';
-  heading.textContent = title;
-  section.appendChild(heading);
-  return section;
-}
-
-function createToggleRow(label: string, desc: string, checked: boolean, onChange: (v: boolean) => void): HTMLDivElement {
-  const row = document.createElement('div');
-  row.className = 'setting-row';
-
-  const info = document.createElement('div');
-  info.className = 'setting-info';
-  const labelEl = document.createElement('span');
-  labelEl.className = 'setting-label';
-  labelEl.textContent = label;
-  const descEl = document.createElement('span');
-  descEl.className = 'setting-desc';
-  descEl.textContent = desc;
-  info.appendChild(labelEl);
-  info.appendChild(descEl);
-
-  const toggle = document.createElement('label');
-  toggle.className = 'toggle-switch';
-  const input = document.createElement('input');
-  input.type = 'checkbox';
-  input.checked = checked;
-  input.addEventListener('change', () => onChange(input.checked));
-  const slider = document.createElement('span');
-  slider.className = 'slider';
-  toggle.appendChild(input);
-  toggle.appendChild(slider);
-
-  row.appendChild(info);
-  row.appendChild(toggle);
-  return row;
-}
-
-function createSliderRow(label: string, desc: string, value: number, onChange: (v: number) => void, opts?: { min?: number; max?: number; step?: number; unit?: string }): HTMLDivElement {
-  const min = opts?.min ?? 0;
-  const max = opts?.max ?? 100;
-  const step = opts?.step ?? 1;
-  const unit = opts?.unit ?? '%';
-
-  const row = document.createElement('div');
-  row.className = 'setting-row';
-
-  const info = document.createElement('div');
-  info.className = 'setting-info';
-  const labelEl = document.createElement('span');
-  labelEl.className = 'setting-label';
-  labelEl.textContent = label;
-  const descEl = document.createElement('span');
-  descEl.className = 'setting-desc';
-  descEl.textContent = desc;
-  info.appendChild(labelEl);
-  info.appendChild(descEl);
-
-  const control = document.createElement('div');
-  control.className = 'opacity-control';
-
-  const slider = document.createElement('input');
-  slider.type = 'range';
-  slider.className = 'opacity-slider';
-  slider.min = String(min);
-  slider.max = String(max);
-  slider.step = String(step);
-  slider.value = String(value);
-
-  const valueEl = document.createElement('span');
-  valueEl.className = 'opacity-value';
-  valueEl.textContent = `${value}${unit}`;
-
-  slider.addEventListener('input', () => {
-    valueEl.textContent = `${slider.value}${unit}`;
-  });
-  slider.addEventListener('change', () => {
-    onChange(Number(slider.value));
-  });
-
-  control.appendChild(slider);
-  control.appendChild(valueEl);
-  row.appendChild(info);
-  row.appendChild(control);
-  return row;
-}
-
 // ── Status ──
-
-interface TaggedLog {
-  tag: string;
-  cssClass: string;
-  entry: string;
-}
 
 function renderPrimeStatus(data: {
   url: string;
-  title: string;
+  title?: string;
   connected: boolean;
   prime: {
     adSkipCount: number;
@@ -205,52 +103,12 @@ function renderPrimeStatus(data: {
     </div>
   `;
 
-  const primeLogs: TaggedLog[] = prime.eventLog
+  currentLogs = prime.eventLog
     .map((entry) => ({ tag: 'PV', cssClass: 'log-tag--pv', entry }))
     .sort((a, b) => a.entry.localeCompare(b.entry))
     .reverse();
-  renderLogEntries(primeLogs);
+  renderLogEntries(logEl, currentLogs);
 }
-
-let currentLogs: TaggedLog[] = [];
-
-function renderLogEntries(logs: TaggedLog[]): void {
-  currentLogs = logs;
-
-  if (logs.length > 0) {
-    logEl.innerHTML = logs
-      .map(({ tag, cssClass, entry }) => {
-        const match = entry.match(/^(\[[^\]]+\])\s*(.*)/);
-        if (match) {
-          return `<div class="log-entry"><span class="log-time">${escapeHtml(match[1])}</span> <span class="log-tag ${cssClass}">${tag}</span> ${escapeHtml(match[2])}</div>`;
-        }
-        return `<div class="log-entry"><span class="log-tag ${cssClass}">${tag}</span> ${escapeHtml(entry)}</div>`;
-      })
-      .join('');
-  } else {
-    logEl.textContent = '';
-  }
-}
-
-// ── Copy logs ──
-
-logCopyBtn.addEventListener('click', () => {
-  if (currentLogs.length === 0) return;
-
-  const text = currentLogs
-    .map(({ tag, entry }) => `[${tag}] ${entry}`)
-    .join('\n');
-
-  const originalHTML = logCopyBtn.innerHTML;
-  navigator.clipboard.writeText(text).then(() => {
-    logCopyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> OK';
-    logCopyBtn.classList.add('copied');
-    setTimeout(() => {
-      logCopyBtn.innerHTML = originalHTML;
-      logCopyBtn.classList.remove('copied');
-    }, 1500);
-  });
-});
 
 // ── Polling ──
 

@@ -1,5 +1,5 @@
 import { YouTubeAdHandler } from './youtube-ad-handler';
-import { setOverlayOpacity } from './skip-overlay';
+import { setOverlayOpacity } from '@ad-skipper/shared';
 
 const ytAdHandler = new YouTubeAdHandler();
 

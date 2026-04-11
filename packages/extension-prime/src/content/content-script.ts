@@ -1,5 +1,5 @@
 import { PrimeAdHandler } from './prime-ad-handler';
-import { setOverlayOpacity } from './skip-overlay';
+import { setOverlayOpacity } from '@ad-skipper/shared';
 
 const primeAdHandler = new PrimeAdHandler();
 

@@ -1,6 +1,6 @@
 {
   "name": "@ad-skipper/extension-prime",
-  "version": "0.4.8",
+  "version": "0.4.9",
   "private": true,
   "scripts": {
     "build": "webpack --mode production",
@@ -8,6 +8,9 @@
     "clean": "rm -rf dist",
     "bump:patch": "npm version patch --no-git-tag-version",
     "bump:minor": "npm version minor --no-git-tag-version"
+  },
+  "dependencies": {
+    "@ad-skipper/shared": "*"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.268",

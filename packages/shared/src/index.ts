@@ -45,6 +45,27 @@ export {
 
 export type { AdBreakInfo } from './parsers/ad-tag-detector.js';
 
+// UI utilities
+export {
+  showSkipOverlay,
+  updateSkipOverlayTimer,
+  hideSkipOverlay,
+  setOverlayOpacity,
+} from './ui/skip-overlay.js';
+
+export {
+  escapeHtml,
+  setupTabSwitching,
+  showVersion,
+  createSection,
+  createToggleRow,
+  createSliderRow,
+  renderLogEntries,
+  setupLogCopy,
+} from './ui/popup-utils.js';
+
+export type { TaggedLog, SliderOptions } from './ui/popup-utils.js';
+
 // Constants
 export {
   TWITCH_HLS_DOMAINS,

@@ -8,7 +8,7 @@ import { PointsClaimer } from './points-claimer';
 import { VodAdHandler } from './vod-ad-handler';
 import { LiveAdHandler } from './live-ad-handler';
 import { ChatKeeper } from './chat-keeper';
-import { setOverlayOpacity } from './skip-overlay';
+import { setOverlayOpacity } from '@ad-skipper/shared';
 
 /** Safely send a message to the background. Stops polling if context is dead. */
 function safeSendMessage(msg: unknown): void {

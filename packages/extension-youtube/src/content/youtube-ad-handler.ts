@@ -1,4 +1,4 @@
-import { showSkipOverlay, hideSkipOverlay, updateSkipOverlayTimer } from './skip-overlay';
+import { showSkipOverlay, hideSkipOverlay, updateSkipOverlayTimer } from '@ad-skipper/shared';
 
 const PLAYER_SELECTOR = '#movie_player';
 const PREVIEW_SELECTOR = '.ytp-ad-preview-text-modern, .ytp-ad-text, .ytp-ad-preview-container';
@@ -121,7 +121,8 @@ export class YouTubeAdHandler {
         this.lastSkipAttempt = 0;
         this.log('Ad detected');
         this.emitState('ad');
-        showSkipOverlay();
+        const playerEl = document.querySelector<HTMLElement>(PLAYER_SELECTOR);
+        showSkipOverlay(playerEl ?? undefined);
       }
 
       // Retry skip every SKIP_RETRY_INTERVAL

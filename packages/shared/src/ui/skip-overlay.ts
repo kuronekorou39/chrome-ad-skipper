@@ -1,9 +1,15 @@
 /**
  * Dark overlay shown while an ad is being fast-forwarded.
- * Covers the video player with a black screen + "広告スキップ中" text.
+ * Covers the video area with a black screen + "広告スキップ中" text,
+ * making the skip feel like a brief dark transition.
+ *
+ * Two modes:
+ *  - Fullscreen: covers the entire viewport (no target specified).
+ *  - Targeted: covers only a specific element (e.g. video player).
  */
 
 const OVERLAY_ID = 'ad-skipper-overlay';
+const FADE_DURATION_MS = 500;
 
 let currentOpacity = 0.85;
 let overlay: HTMLDivElement | null = null;
@@ -44,7 +50,7 @@ function ensureOverlay(target?: HTMLElement): HTMLDivElement {
     alignItems: 'center',
     justifyContent: 'center',
     opacity: '0',
-    transition: 'opacity 0.5s ease-in-out',
+    transition: `opacity ${FADE_DURATION_MS}ms ease-in-out`,
     pointerEvents: 'none',
   });
 
@@ -71,7 +77,6 @@ function ensureOverlay(target?: HTMLElement): HTMLDivElement {
   });
 
   const dots = document.createElement('div');
-  dots.className = 'ad-skipper-dots';
   Object.assign(dots.style, {
     marginTop: '12px',
     display: 'flex',
@@ -127,19 +132,23 @@ function applyPositionMode(): void {
   }
 }
 
+/**
+ * Show the skip overlay.
+ * @param target Element to cover. If omitted, covers the full viewport.
+ */
 export function showSkipOverlay(target?: HTMLElement): void {
-  // Default to covering the YouTube player
-  const t = target ?? document.querySelector<HTMLElement>('#movie_player') ?? undefined;
-  const el = ensureOverlay(t);
+  const el = ensureOverlay(target);
   el.style.display = 'flex';
-  el.offsetHeight; // force layout
+  void el.offsetHeight; // force reflow for transition
   el.style.opacity = '1';
 }
 
+/** Update the timer text displayed on the overlay. */
 export function updateSkipOverlayTimer(text: string): void {
   if (timerEl) timerEl.textContent = text;
 }
 
+/** Hide the skip overlay with a fade-out transition. */
 export function hideSkipOverlay(): void {
   if (!overlay) return;
   overlay.style.opacity = '0';
@@ -151,9 +160,10 @@ export function hideSkipOverlay(): void {
   targetElement = null;
   setTimeout(() => {
     if (overlay) overlay.style.display = 'none';
-  }, 500);
+  }, FADE_DURATION_MS);
 }
 
+/** Set the overlay background opacity (0–100%). */
 export function setOverlayOpacity(percent: number): void {
   currentOpacity = Math.max(0, Math.min(100, percent)) / 100;
   if (overlay) {
