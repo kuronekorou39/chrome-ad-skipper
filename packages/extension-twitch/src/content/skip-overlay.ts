@@ -50,7 +50,7 @@ function ensureOverlay(target?: HTMLElement): HTMLDivElement {
     alignItems: 'center',
     justifyContent: 'center',
     opacity: '0',
-    transition: 'opacity 0.15s ease-in',
+    transition: 'opacity 0.5s ease-in-out',
     pointerEvents: 'none',
   });
 
@@ -162,7 +162,7 @@ export function hideSkipOverlay(): void {
   targetElement = null;
   setTimeout(() => {
     if (overlay) overlay.style.display = 'none';
-  }, 150);
+  }, 500);
 }
 
 export function setOverlayOpacity(percent: number): void {

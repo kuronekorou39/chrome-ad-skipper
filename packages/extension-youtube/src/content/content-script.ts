@@ -40,6 +40,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === 'get-youtube-status') {
     sendResponse({
       url: location.href,
+      title: document.title,
       connected: true,
       youtube: ytAdHandler.getStatus(),
     });

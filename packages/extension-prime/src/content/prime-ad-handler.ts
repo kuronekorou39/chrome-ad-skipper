@@ -114,8 +114,16 @@ export class PrimeAdHandler {
       // to avoid overshooting into content at high speed
       const targetRate = this.rateForRemaining(remaining);
 
-      // Speed up + mute whatever is playing
-      if (playingVideo) {
+      if (targetRate <= 1) {
+        // Last stretch — restore normal playback and hide overlay early
+        if (playingVideo && playingVideo.playbackRate !== 1) {
+          playingVideo.playbackRate = 1;
+          playingVideo.muted = this.savedMuted;
+          playingVideo.volume = this.savedVolume;
+        }
+        hideSkipOverlay();
+      } else if (playingVideo) {
+        // Speed up + mute
         if (playingVideo.playbackRate !== targetRate) {
           playingVideo.playbackRate = targetRate;
         }
@@ -148,11 +156,12 @@ export class PrimeAdHandler {
     return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
   }
 
-  /** Ramp down playback rate as the ad nears its end. */
+  /** Ramp down playback rate as the ad nears its end to avoid overshooting into content. */
   private rateForRemaining(timerText: string): number {
     const secs = this.parseRemainingSeconds(timerText);
-    if (secs <= 1) return 2;
-    if (secs <= 3) return 4;
+    if (secs <= 2) return 1;   // last 2s: normal speed, no overshoot
+    if (secs <= 5) return 2;
+    if (secs <= 10) return 4;
     return AD_PLAYBACK_RATE;
   }
 

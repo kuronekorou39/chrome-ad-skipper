@@ -1,6 +1,8 @@
 const connectionEl = document.getElementById('connection')!;
 const statusPanel = document.getElementById('status-panel')!;
 const logEl = document.getElementById('log')!;
+const logCopyBtn = document.getElementById('log-copy')!;
+const versionEl = document.getElementById('version')!;
 const tabStatus = document.getElementById('tab-status')!;
 const tabLog = document.getElementById('tab-log')!;
 const tabSettings = document.getElementById('tab-settings')!;
@@ -12,6 +14,9 @@ const TAB_ELEMENTS: Record<string, HTMLElement> = {
 };
 
 let currentTabId: number | null = null;
+
+const manifest = chrome.runtime.getManifest();
+versionEl.textContent = `v${manifest.version}`;
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -55,18 +60,18 @@ function renderSettingsTab(): void {
     const data: SettingsData = { ...DEFAULTS, ...raw };
     tabSettings.innerHTML = '';
 
-    // Prime Video section
-    const primeSection = createSection('Prime Video');
-    primeSection.appendChild(createToggleRow('自動スキップ', data.pvAutoSkip, (v) => {
-      chrome.storage.local.set({ pvAutoSkip: v });
-    }));
-    tabSettings.appendChild(primeSection);
+    const section = createSection('Prime Video');
+    section.appendChild(createToggleRow(
+      '自動スキップ', '広告を自動で倍速+ミュートして早送り',
+      data.pvAutoSkip, (v) => chrome.storage.local.set({ pvAutoSkip: v }),
+    ));
+    tabSettings.appendChild(section);
 
-    // Display section
     const displaySection = createSection('表示');
-    displaySection.appendChild(createSliderRow('オーバーレイ不透明度', data.overlayOpacity, (v) => {
-      chrome.storage.local.set({ overlayOpacity: v });
-    }));
+    displaySection.appendChild(createSliderRow(
+      'オーバーレイ不透明度', '広告スキップ中の暗転の濃さ',
+      data.overlayOpacity, (v) => chrome.storage.local.set({ overlayOpacity: v }),
+    ));
     tabSettings.appendChild(displaySection);
   });
 }
@@ -81,33 +86,38 @@ function createSection(title: string): HTMLDivElement {
   return section;
 }
 
-function createToggleRow(label: string, checked: boolean, onChange: (v: boolean) => void): HTMLDivElement {
+function createToggleRow(label: string, desc: string, checked: boolean, onChange: (v: boolean) => void): HTMLDivElement {
   const row = document.createElement('div');
   row.className = 'setting-row';
 
+  const info = document.createElement('div');
+  info.className = 'setting-info';
   const labelEl = document.createElement('span');
   labelEl.className = 'setting-label';
   labelEl.textContent = label;
+  const descEl = document.createElement('span');
+  descEl.className = 'setting-desc';
+  descEl.textContent = desc;
+  info.appendChild(labelEl);
+  info.appendChild(descEl);
 
   const toggle = document.createElement('label');
   toggle.className = 'toggle-switch';
-
   const input = document.createElement('input');
   input.type = 'checkbox';
   input.checked = checked;
   input.addEventListener('change', () => onChange(input.checked));
-
   const slider = document.createElement('span');
   slider.className = 'slider';
-
   toggle.appendChild(input);
   toggle.appendChild(slider);
-  row.appendChild(labelEl);
+
+  row.appendChild(info);
   row.appendChild(toggle);
   return row;
 }
 
-function createSliderRow(label: string, value: number, onChange: (v: number) => void, opts?: { min?: number; max?: number; step?: number; unit?: string }): HTMLDivElement {
+function createSliderRow(label: string, desc: string, value: number, onChange: (v: number) => void, opts?: { min?: number; max?: number; step?: number; unit?: string }): HTMLDivElement {
   const min = opts?.min ?? 0;
   const max = opts?.max ?? 100;
   const step = opts?.step ?? 1;
@@ -116,9 +126,16 @@ function createSliderRow(label: string, value: number, onChange: (v: number) => 
   const row = document.createElement('div');
   row.className = 'setting-row';
 
+  const info = document.createElement('div');
+  info.className = 'setting-info';
   const labelEl = document.createElement('span');
   labelEl.className = 'setting-label';
   labelEl.textContent = label;
+  const descEl = document.createElement('span');
+  descEl.className = 'setting-desc';
+  descEl.textContent = desc;
+  info.appendChild(labelEl);
+  info.appendChild(descEl);
 
   const control = document.createElement('div');
   control.className = 'opacity-control';
@@ -144,7 +161,7 @@ function createSliderRow(label: string, value: number, onChange: (v: number) => 
 
   control.appendChild(slider);
   control.appendChild(valueEl);
-  row.appendChild(labelEl);
+  row.appendChild(info);
   row.appendChild(control);
   return row;
 }
@@ -159,6 +176,7 @@ interface TaggedLog {
 
 function renderPrimeStatus(data: {
   url: string;
+  title: string;
   connected: boolean;
   prime: {
     adSkipCount: number;
@@ -169,47 +187,38 @@ function renderPrimeStatus(data: {
 }): void {
   const { prime } = data;
   const dotClass = prime.isAdPlaying ? 'dot--yellow' : 'dot--blue';
-  connectionEl.innerHTML = `<span class="dot ${dotClass}"></span>Prime Video`;
+  const title = (data.title ?? '')
+    .replace(/^Amazon\.co\.jp:\s*/, '')
+    .replace(/^Amazon\.com:\s*/, '')
+    .replace(/\s*-\s*Prime Video\s*$/, '')
+    || 'Prime Video';
+  connectionEl.innerHTML = `<span class="dot ${dotClass}"></span>${escapeHtml(title)}`;
 
   const stateLabel = prime.isAdPlaying ? '広告スキップ中 (16x)' : '本編再生中';
-  const stateClass = prime.isAdPlaying ? 'val--ad' : 'val--idle';
+  const badgeClass = prime.isAdPlaying ? 'status-badge--active' : 'status-badge--idle';
 
   statusPanel.innerHTML = `
-    <div class="status-row">
-      <span class="label">ステータス</span>
-      <span class="${stateClass}">${stateLabel}</span>
-    </div>
-    <div class="status-row">
-      <span class="label">広告スキップ数</span>
-      <span>${prime.adSkipCount}</span>
-    </div>
-    <div class="status-row">
-      <span class="label">自動スキップ</span>
-      <span>
-        <button id="toggle-skip" class="toggle-btn ${prime.autoSkipEnabled ? 'on' : 'off'}">
-          ${prime.autoSkipEnabled ? 'ON' : 'OFF'}
-        </button>
-      </span>
+    <div class="status-badge ${badgeClass}">${stateLabel}</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">${prime.adSkipCount}</div>
+        <div class="stat-label">広告スキップ</div>
+      </div>
     </div>
   `;
 
-  // Attach toggle handler
-  document.getElementById('toggle-skip')?.addEventListener('click', () => {
-    if (currentTabId === null) return;
-    chrome.tabs.sendMessage(currentTabId, {
-      type: 'set-auto-skip',
-      enabled: !prime.autoSkipEnabled,
-    });
-  });
-
   const primeLogs: TaggedLog[] = prime.eventLog
-    .map((entry) => ({ tag: 'PV', cssClass: 'log-tag--vod', entry }))
+    .map((entry) => ({ tag: 'PV', cssClass: 'log-tag--pv', entry }))
     .sort((a, b) => a.entry.localeCompare(b.entry))
     .reverse();
   renderLogEntries(primeLogs);
 }
 
+let currentLogs: TaggedLog[] = [];
+
 function renderLogEntries(logs: TaggedLog[]): void {
+  currentLogs = logs;
+
   if (logs.length > 0) {
     logEl.innerHTML = logs
       .map(({ tag, cssClass, entry }) => {
@@ -224,6 +233,26 @@ function renderLogEntries(logs: TaggedLog[]): void {
     logEl.textContent = '';
   }
 }
+
+// ── Copy logs ──
+
+logCopyBtn.addEventListener('click', () => {
+  if (currentLogs.length === 0) return;
+
+  const text = currentLogs
+    .map(({ tag, entry }) => `[${tag}] ${entry}`)
+    .join('\n');
+
+  const originalHTML = logCopyBtn.innerHTML;
+  navigator.clipboard.writeText(text).then(() => {
+    logCopyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> OK';
+    logCopyBtn.classList.add('copied');
+    setTimeout(() => {
+      logCopyBtn.innerHTML = originalHTML;
+      logCopyBtn.classList.remove('copied');
+    }, 1500);
+  });
+});
 
 // ── Polling ──
 

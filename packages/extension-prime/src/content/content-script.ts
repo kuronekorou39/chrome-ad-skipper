@@ -38,6 +38,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === 'get-prime-status') {
     sendResponse({
       url: location.href,
+      title: document.title,
       connected: true,
       prime: primeAdHandler.getStatus(),
     });
