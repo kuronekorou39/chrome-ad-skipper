@@ -245,7 +245,7 @@ export function isMasterPlaylist(raw: string): boolean {
  */
 function parseDateRangeAttributes(attrStr: string): Record<string, string> {
   const attrs: Record<string, string> = {};
-  const regex = /([A-Z\-]+)=(?:"([^"]*)"|([^,]*))/g;
+  const regex = /([A-Z-]+)=(?:"([^"]*)"|([^,]*))/g;
   let match: RegExpExecArray | null;
 
   while ((match = regex.exec(attrStr)) !== null) {

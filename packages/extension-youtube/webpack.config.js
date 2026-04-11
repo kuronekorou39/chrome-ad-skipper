@@ -31,6 +31,7 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         {
+          // manifest.json の version "0.0.0" を package.json のバージョンに置換
           from: 'manifest.json',
           to: 'manifest.json',
           transform(content) {
@@ -46,7 +47,4 @@ module.exports = {
     }),
   ],
   devtool: false,
-  optimization: {
-    minimize: false,
-  },
 };

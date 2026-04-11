@@ -13,7 +13,9 @@
 - `npm run build` で各拡張の `dist/manifest.json` に自動反映される
 - 機能追加は `bump:*:minor`、バグ修正は `bump:*:patch`
 
-## Testing
+## Testing & Linting
 
 - `npm test` で vitest ユニットテスト実行（shared パッケージ）
+- `npm run lint` で ESLint チェック
+- `npm run format:check` で Prettier フォーマットチェック
 - 拡張機能の動作確認は Chrome に `dist/` を読み込んで手動テスト

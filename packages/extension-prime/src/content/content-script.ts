@@ -7,7 +7,7 @@ const primeAdHandler = new PrimeAdHandler();
 primeAdHandler.onStateChange((state) => {
   try {
     chrome.runtime.sendMessage({ type: 'badge-update', data: { state } }).catch(() => {});
-  } catch {}
+  } catch { /* extension context may be invalidated */ }
 });
 
 // Load initial settings then start

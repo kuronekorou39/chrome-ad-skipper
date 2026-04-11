@@ -1,6 +1,6 @@
 {
   "name": "@ad-skipper/extension-youtube",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "private": true,
   "scripts": {
     "build": "webpack --mode production",

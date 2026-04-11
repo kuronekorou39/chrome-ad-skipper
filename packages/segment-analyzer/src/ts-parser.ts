@@ -165,7 +165,7 @@ function parseAdaptationField(data: Buffer, offset: number): AdaptationField {
 export function getTsSummary(packets: TsPacket[]): TsSummary {
   const pidCounts = new Map<number, number>();
   let discontinuities = 0;
-  let pcrValues: { pid: number; pcr: number }[] = [];
+  const pcrValues: { pid: number; pcr: number }[] = [];
 
   for (const pkt of packets) {
     pidCounts.set(pkt.pid, (pidCounts.get(pkt.pid) ?? 0) + 1);
