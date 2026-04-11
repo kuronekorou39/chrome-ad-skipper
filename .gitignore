@@ -28,6 +28,9 @@ npm-debug.log*
 .env
 .env.local
 
+# Coverage reports
+coverage/
+
 # Development artifacts
 bk/
 RESEARCH.md
