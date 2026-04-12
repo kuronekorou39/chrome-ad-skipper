@@ -119,8 +119,16 @@ export class LiveAdHandler {
     this.postToPage('unlock-playback-rate', {});
 
     const video = this.findMainVideo();
-    if (video) {
-      video.muted = this.savedMuted;
+    if (video && !this.savedMuted) {
+      // Safely restore unmuted state — Chrome may block if no user interaction
+      const wasPaused = video.paused;
+      video.muted = false;
+      video.volume = this.savedVolume;
+      if (!wasPaused && video.paused) {
+        video.muted = true;
+        video.play().catch(() => {});
+      }
+    } else if (video) {
       video.volume = this.savedVolume;
     }
 

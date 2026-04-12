@@ -2,6 +2,23 @@ import { MESSAGE_SOURCE } from '@ad-skipper/shared';
 import { isAdBreakActive } from './ad-detection';
 
 /**
+ * Safely unmute a video element. If Chrome blocks unmuting due to
+ * autoplay policy (no user interaction yet), keep it muted and playing
+ * rather than letting Chrome pause it entirely.
+ */
+function safeUnmute(video: HTMLVideoElement, volume: number): void {
+  const wasPaused = video.paused;
+  video.muted = false;
+  video.volume = volume;
+  // Chrome may pause the video if unmuting violates autoplay policy.
+  // If that happens, re-mute and resume playback.
+  if (!wasPaused && video.paused) {
+    video.muted = true;
+    video.play().catch(() => {});
+  }
+}
+
+/**
  * Swaps the sub-stream over the ad during Twitch ad breaks.
  *
  * Detection (based on ACTIVE video count — ignoring empty placeholders):
@@ -290,8 +307,7 @@ export class StreamSwapper {
     this.positionSubVideo();
 
     // Unmute sub video and set volume
-    this.subVideo.muted = false;
-    this.subVideo.volume = this.savedVolume;
+    safeUnmute(this.subVideo, this.savedVolume);
 
     // Polling: maintain audio state + detect ad end (sub-video paused)
     this.unmuteInterval = setInterval(() => {
@@ -333,11 +349,8 @@ export class StreamSwapper {
       }
 
       // Keep sub-video unmuted with correct volume
-      if (this.subVideo.muted) {
-        this.subVideo.muted = false;
-      }
-      if (this.subVideo.volume === 0) {
-        this.subVideo.volume = this.savedVolume;
+      if (this.subVideo.muted || this.subVideo.volume === 0) {
+        safeUnmute(this.subVideo, this.savedVolume);
       }
     }, 200);
 
@@ -438,7 +451,7 @@ export class StreamSwapper {
       if (adVideo) {
         adVideo.style.removeProperty('opacity');
         adVideo.style.removeProperty('pointer-events');
-        adVideo.muted = false;
+        safeUnmute(adVideo, 1);
       }
     }, 100);
   }
